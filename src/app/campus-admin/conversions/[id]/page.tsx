@@ -147,7 +147,7 @@ export default function ReviewConversionPage() {
                     <TableRow>
                         <TableHead>MK Asal (Transkrip)</TableHead>
                         <TableHead>Nilai/SKS</TableHead>
-                        <TableHead>Match AI</TableHead>
+                        <TableHead>Match Transkrip</TableHead>
                         <TableHead>MK Tujuan (Kurikulum)</TableHead>
                         <TableHead className="text-center">Skor</TableHead>
                         <TableHead className="text-center">Status</TableHead>
