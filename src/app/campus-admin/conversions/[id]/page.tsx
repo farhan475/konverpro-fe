@@ -2,28 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import axios from "@/lib/axios";
-import { ArrowLeft, Check, X, Save, Loader2, AlertTriangle } from "lucide-react";
+import axios from "@/lib/axios"; 
+import { ArrowLeft, Check, X, Save, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { generateConversionPDF } from "@/lib/generatePdf";
 
 export default function ReviewConversionPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id; // Ambil ID dari URL
+  const id = params.id; 
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // 1. Fetch Detail Data
   const fetchData = async () => {
     try {
-      // Kita pakai endpoint public dulu untuk ambil datanya
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/conversions/${id}`);
+      // PERBAIKAN 2: URL jadi lebih pendek karena baseURL sudah di-set di lib/axios
+      const response = await axios.get(`/conversions/${id}`);
       setData(response.data.data);
       setLoading(false);
     } catch (error) {
@@ -37,42 +37,45 @@ export default function ReviewConversionPage() {
     if (id) fetchData();
   }, [id]);
 
-  // 2. Handle Review per Item (Approve/Reject)
+  // Handle Review per Item (Approve/Reject)
   const handleReviewItem = async (detailId: string, status: 'approved' | 'rejected') => {
     setProcessingId(detailId);
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/admin/review-detail/${detailId}`, {
+      // PERBAIKAN 2
+      await axios.post(`/admin/review-detail/${detailId}`, {
         status: status,
         admin_notes: "Reviewed by Admin"
       });
       
       toast.success(status === 'approved' ? "Mata kuliah disetujui" : "Mata kuliah ditolak");
-      
-      // Refresh data lokal tanpa reload page
-      fetchData();
-    } catch (error) {
+      fetchData(); // Refresh data
+    } catch (error: any) {
+      console.error(error.response);
       toast.error("Gagal melakukan review");
     } finally {
       setProcessingId(null);
     }
   };
 
-  // 3. Handle Finalisasi (Ketuk Palu)
+  // Handle Finalisasi (Ketuk Palu)
   const handleFinalize = async () => {
     if (!confirm("Apakah Anda yakin ingin menyetujui seluruh hasil konversi ini?")) return;
     
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/admin/finalize/${id}`, {
+      await axios.post(`/admin/finalize/${id}`, {
         notes: "Selamat, hasil konversi Anda telah disetujui."
       });
       toast.success("Dokumen berhasil difinalisasi!");
-      router.push("/campus-admin/conversions"); // Balik ke list
-    } catch (error) {
-      toast.error("Gagal memproses finalisasi");
+      
+      fetchData(); // Refresh data
+    } catch (error: any) {
+      // PERBAIKAN DI SINI: Tangkap pesan error asli dari backend
+      console.error("Detail Error:", error.response?.data);
+      toast.error(error.response?.data?.message || "Gagal memproses finalisasi");
     }
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
   if (!data) return <div className="p-8">Data tidak ditemukan.</div>;
 
   return (
@@ -88,6 +91,14 @@ export default function ReviewConversionPage() {
           <p className="text-slate-500 text-sm">TRX ID: <span className="font-mono">{data.trx_id}</span></p>
         </div>
         <div className="ml-auto flex gap-3">
+            {/* JIKA SUDAH APPROVED, MUNCUL TOMBOL CETAK PDF */}
+            {data.status === 'approved' && (
+                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 bg-white" onClick={() => generateConversionPDF(data, true)}>
+                    <Download className="w-4 h-4 mr-2" /> Cetak Berita Acara
+                </Button>
+            )}
+
+            {/* JIKA BELUM APPROVED, MUNCUL TOMBOL FINALISASI */}
             {data.status !== 'approved' && (
                 <Button className="bg-green-600 hover:bg-green-700" onClick={handleFinalize}>
                     <Save className="w-4 h-4 mr-2" /> Finalisasi & Approve
@@ -98,7 +109,7 @@ export default function ReviewConversionPage() {
 
       {/* STUDENT INFO CARD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 shadow-sm border-slate-200">
             <CardHeader><CardTitle className="text-sm text-slate-500">Informasi Mahasiswa</CardTitle></CardHeader>
             <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -123,10 +134,10 @@ export default function ReviewConversionPage() {
         </Card>
 
         {/* STATUS CARD */}
-        <Card className={data.status === 'approved' ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"}>
+        <Card className={`shadow-sm ${data.status === 'approved' ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"}`}>
             <CardHeader><CardTitle className="text-sm opacity-70">Status Dokumen</CardTitle></CardHeader>
             <CardContent className="text-center py-8">
-                <Badge className={`text-lg px-4 py-1 mb-2 ${data.status === 'approved' ? "bg-green-600" : "bg-orange-500"}`}>
+                <Badge className={`text-lg px-4 py-1 mb-2 ${data.status === 'approved' ? "bg-green-600 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-500"}`}>
                     {data.status.toUpperCase()}
                 </Badge>
                 <p className="text-xs opacity-70">
@@ -137,19 +148,19 @@ export default function ReviewConversionPage() {
       </div>
 
       {/* TABLE REVIEW */}
-      <Card>
+      <Card className="shadow-sm border-slate-200">
         <CardHeader>
             <CardTitle>Rincian Mata Kuliah</CardTitle>
         </CardHeader>
         <CardContent>
             <Table>
-                <TableHeader>
+                <TableHeader className="bg-slate-50">
                     <TableRow>
                         <TableHead>MK Asal (Transkrip)</TableHead>
                         <TableHead>Nilai/SKS</TableHead>
-                        <TableHead>Match Transkrip</TableHead>
+                        <TableHead></TableHead>
                         <TableHead>MK Tujuan (Kurikulum)</TableHead>
-                        <TableHead className="text-center">Skor</TableHead>
+                        <TableHead className="text-center">Skor Kemiripan</TableHead>
                         <TableHead className="text-center">Status</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
@@ -157,10 +168,10 @@ export default function ReviewConversionPage() {
                 <TableBody>
                     {data.details?.map((item: any) => (
                         <TableRow key={item.id} className={item.status === 'rejected' ? 'bg-red-50/50' : ''}>
-                            <TableCell className="font-medium">{item.src_name}</TableCell>
+                            <TableCell className="font-medium text-slate-700">{item.src_name}</TableCell>
                             <TableCell>{item.src_grade} ({item.src_sks})</TableCell>
                             <TableCell>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center">
                                     <ArrowLeft className="w-4 h-4 text-slate-300" />
                                 </div>
                             </TableCell>
@@ -180,9 +191,9 @@ export default function ReviewConversionPage() {
                                 <Badge variant="outline" className={
                                     item.status.includes('accepted') ? 'bg-green-50 text-green-700 border-green-200' : 
                                     item.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' : 
-                                    'bg-slate-100'
+                                    'bg-slate-100 text-slate-600 border-slate-200'
                                 }>
-                                    {item.status === 'auto_accepted' ? 'Auto' : item.status === 'manual_accepted' ? 'Manual' : item.status}
+                                    {item.status === 'auto_accepted' ? 'Otomatis' : item.status === 'manual_accepted' ? 'Menunggu' : item.status}
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-right">
@@ -194,6 +205,7 @@ export default function ReviewConversionPage() {
                                             className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700" 
                                             onClick={() => handleReviewItem(item.id, 'approved')}
                                             disabled={processingId === item.id}
+                                            title="Terima / Validasi"
                                         >
                                             {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4" />}
                                         </Button>
@@ -203,8 +215,9 @@ export default function ReviewConversionPage() {
                                             className="h-8 w-8 p-0"
                                             onClick={() => handleReviewItem(item.id, 'rejected')}
                                             disabled={processingId === item.id}
+                                            title="Tolak"
                                         >
-                                            <X className="w-4 h-4" />
+                                            {processingId === item.id ? <Loader2 className="w-4 h-4 animate-spin"/> : <X className="w-4 h-4" />}
                                         </Button>
                                     </div>
                                 )}

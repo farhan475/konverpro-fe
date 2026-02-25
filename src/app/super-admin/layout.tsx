@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Building2, Wallet, LogOut } from "lucide-react";
+import { LayoutDashboard, Building2, Wallet, LogOut, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Cookies from "js-cookie";
 import axios from "@/lib/axios";
@@ -37,12 +37,22 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
+<nav className="flex-1 p-4 space-y-2">
+          {/* Menu Kampus */}
           <Link href="/super-admin">
             <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
               pathname === '/super-admin' ? "bg-white text-blue-900 shadow-lg" : "text-blue-200 hover:text-white hover:bg-blue-800"
             }`}>
               <Building2 className="w-5 h-5" /> Manajemen Kampus
+            </div>
+          </Link>
+          
+          {/* Menu User (BARU) */}
+          <Link href="/super-admin/users">
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+              pathname === '/super-admin/users' ? "bg-white text-blue-900 shadow-lg" : "text-blue-200 hover:text-white hover:bg-blue-800"
+            }`}>
+              <Users className="w-5 h-5" /> Manajemen User
             </div>
           </Link>
         </nav>

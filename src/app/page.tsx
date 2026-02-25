@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { UploadCloud, FileSpreadsheet, ArrowRight, Loader2, Search } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, ArrowRight, Loader2, Search, Download } from "lucide-react"; // Download icon dipindah kesini
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner"; 
+import { generateConversionPDF } from "@/lib/generatePdf";
 
 export default function LandingPage() {
   
@@ -333,18 +334,30 @@ export default function LandingPage() {
                         ))}
                     </div>
 
-                    <div className="mt-auto">
+                    {/* BLOK TOMBOL YANG DIPERBARUI */}
+                    <div className="mt-auto flex flex-col gap-2">
+                        <Button 
+                            variant="outline" 
+                            className="w-full h-12 rounded-xl text-blue-600 border-blue-200 hover:bg-blue-50 font-bold"
+                            onClick={() => generateConversionPDF(result, false)}
+                        >
+                            <Download className="mr-2 w-4 h-4" /> Download PDF Hasil Estimasi
+                        </Button>
+
                         <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12 rounded-xl shadow-lg shadow-green-600/20">
                             Lanjut Pendaftaran <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
+
                         <Button 
                             variant="ghost" 
-                            className="w-full mt-2 text-slate-500"
+                            className="w-full text-slate-500"
                             onClick={() => { setResult(null); setFile(null); }}
                         >
                             Coba Upload Ulang
                         </Button>
                     </div>
+                    {/* AKHIR BLOK TOMBOL */}
+
                   </div>
                 )}
               </div>
