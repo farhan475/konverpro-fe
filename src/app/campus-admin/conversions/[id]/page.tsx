@@ -91,14 +91,18 @@ export default function ReviewConversionPage() {
           <p className="text-slate-500 text-sm">TRX ID: <span className="font-mono">{data.trx_id}</span></p>
         </div>
         <div className="ml-auto flex gap-3">
-            {/* JIKA SUDAH APPROVED, MUNCUL TOMBOL CETAK PDF */}
+            {/* JIKA STATUS SUDAH APPROVED -> MUNCUL TOMBOL CETAK */}
             {data.status === 'approved' && (
-                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50 bg-white" onClick={() => generateConversionPDF(data, true)}>
+                <Button 
+                    variant="outline" 
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50 bg-white" 
+                    onClick={() => generateConversionPDF(data, true)} // true = Versi Official
+                >
                     <Download className="w-4 h-4 mr-2" /> Cetak Berita Acara
                 </Button>
             )}
 
-            {/* JIKA BELUM APPROVED, MUNCUL TOMBOL FINALISASI */}
+            {/* JIKA BELUM APPROVED -> MUNCUL TOMBOL FINALISASI */}
             {data.status !== 'approved' && (
                 <Button className="bg-green-600 hover:bg-green-700" onClick={handleFinalize}>
                     <Save className="w-4 h-4 mr-2" /> Finalisasi & Approve

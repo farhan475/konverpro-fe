@@ -1,14 +1,47 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+@import "tw-animate-css"; /* Pastikan plugin ini terinstall jika Anda pakai */
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Fonts */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+
+  /* --- BRAND COLORS (Dari HTML KonverPro Asli) --- */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-500: #094E8B;
+  --color-brand-600: #073e6f;
+  --color-brand-700: #052f53;
+  --color-brand-800: #001f3f;
+  --color-brand-900: #001a33;
+  
+  --color-accent-500: #FDD824;
+  --color-accent-600: #d97706;
+
+  /* --- CUSTOM SHADOWS & ANIMATIONS --- */
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  --animate-progress: loadProgress 1.5s ease-in-out forwards;
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes loadProgress {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+  }
+
+  /* --- SHADCN DEFAULT MAPPING --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -38,6 +71,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -47,31 +81,49 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/* --- THEME VARIABLES (Shadcn v4 okLCH) --- */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  
+  /* Background & Foreground (Dibuat agak keabu-abuan khas Slate seperti di HTML) */
+  --background: oklch(0.98 0.005 250); /* Mirip bg-slate-50 */
+  --foreground: oklch(0.2 0.02 250);   /* Mirip text-slate-800 */
+  
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.2 0.02 250);
+  
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.2 0.02 250);
+  
+  /* Primary kita ubah menjadi warna BRAND BLUE KonverPro (#094E8B) */
+  /* Konversi HEX #094E8B ke OKLCH (sekitar L=0.4, C=0.12, H=255) */
+  --primary: oklch(0.42 0.12 255); 
+  --primary-foreground: oklch(0.98 0 0);
+  
+  --secondary: oklch(0.96 0.01 250);
+  --secondary-foreground: oklch(0.42 0.12 255);
+  
+  --muted: oklch(0.96 0.01 250);
+  --muted-foreground: oklch(0.55 0.02 250);
+  
+  /* Accent kita arahkan ke warna kuning KonverPro jika memungkinkan, 
+     tapi default shadcn accent biasa dipakai untuk hover background */
+  --accent: oklch(0.96 0.01 250);
+  --accent-foreground: oklch(0.2 0.02 250);
+  
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --border: oklch(0.92 0.01 250);
+  --input: oklch(0.92 0.01 250);
+  --ring: oklch(0.42 0.12 255);
+  
+  /* Chart Colors */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  
+  /* Sidebar Colors */
   --sidebar: oklch(0.984 0.003 247.858);
   --sidebar-foreground: oklch(0.129 0.042 264.695);
   --sidebar-primary: oklch(0.208 0.042 265.755);
@@ -124,3 +176,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Scrollbar (Sesuai HTML Asli) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

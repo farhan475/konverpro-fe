@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google"; // GANTI FONT DI SINI
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner"; // <--- 1. Import ini
+import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+// Konfigurasi Font
+const jakartaSans = Plus_Jakarta_Sans({ 
+  subsets: ["latin"],
+  variable: '--font-jakarta'
+});
 
 export const metadata: Metadata = {
-  title: "KonverPro",
-  description: "Sistem Konversi SKS Kampus",
+  title: "KonverPro | Marketplace Konversi Kampus",
+  description: "Transfer Kredit Kuliah Lebih Cepat & Transparan",
 };
 
 export default function RootLayout({
@@ -16,10 +20,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="id" className="scroll-smooth">
+      <body className={`${jakartaSans.variable} font-sans antialiased text-slate-600 bg-slate-50 min-h-screen flex flex-col`}>
         {children}
-        <Toaster /> {/* <--- 2. Pasang komponen ini di sini */}
+        <Toaster />
       </body>
     </html>
   );
