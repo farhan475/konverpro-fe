@@ -68,7 +68,7 @@ export default function UserManagementPage() {
         }
         setModal({ isOpen: false, data: null });
         fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
         toast.error(error.response?.data?.message || "Gagal menyimpan user.");
     } finally {
         setFormLoading(false);

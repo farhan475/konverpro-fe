@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { AxiosError } from "axios";
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,10 +28,13 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-        email,
-        password
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/login`,
+        {
+          email,
+          password,
+        },
+      );
 
       const { access_token, user } = response.data;
 
@@ -36,17 +46,20 @@ export default function LoginPage() {
       toast.success(`Selamat datang, ${user.name}`);
 
       // 2. Redirect sesuai Role
-      if (user.role === 'campus_admin') {
+      if (user.role === "campus_admin") {
         router.push("/campus-admin");
-      } else if (user.role === 'super_admin') {
+      } else if (user.role === "super_admin") {
         router.push("/super-admin"); // Nanti kita buat
       } else {
         router.push("/");
       }
-
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Login gagal");
+      toast.error(
+        error instanceof AxiosError && error.response?.data?.message
+          ? error.response.data.message
+          : "Login gagal",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -59,16 +72,20 @@ export default function LoginPage() {
           <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
             <Lock className="w-6 h-6" />
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900">Admin Portal</CardTitle>
-          <CardDescription>Masuk untuk mengelola konversi & kurikulum</CardDescription>
+          <CardTitle className="text-2xl font-bold text-slate-900">
+            Admin Portal
+          </CardTitle>
+          <CardDescription>
+            Masuk untuk mengelola konversi & kurikulum
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Email Kampus</label>
-              <Input 
-                type="email" 
-                placeholder="admin@kampus.ac.id" 
+              <Input
+                type="email"
+                placeholder="admin@kampus.ac.id"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -76,16 +93,23 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Password</label>
-              <Input 
-                type="password" 
-                placeholder="••••••••" 
+              <Input
+                type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin mr-2" /> : "Masuk Dashboard"}
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 font-bold"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="animate-spin mr-2" />
+              ) : (
+                "Masuk Dashboard"
+              )}
             </Button>
           </form>
           <div className="mt-6 text-center text-xs text-slate-400">

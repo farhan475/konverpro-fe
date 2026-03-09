@@ -75,7 +75,7 @@ export default function CurriculumPage() {
       // Reload
       const res = await axios.get(`/curriculum/prodi/${selectedProdi}/courses`);
       setCourses(res.data.data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(error.response?.data?.message || "Gagal import");
     } finally {
       setUploading(false);

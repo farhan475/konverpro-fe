@@ -62,7 +62,7 @@ export default function KampusManagementPage() {
       toast.success("Kampus berhasil didaftarkan!");
       setModal({ type: null, data: null });
       fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(error.response?.data?.message || "Gagal mendaftarkan kampus");
     } finally {
       setFormLoading(false);

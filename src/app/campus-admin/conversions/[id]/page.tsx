@@ -49,7 +49,7 @@ export default function ReviewConversionPage() {
       
       toast.success(status === 'approved' ? "Mata kuliah disetujui" : "Mata kuliah ditolak");
       fetchData(); // Refresh data
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error.response);
       toast.error("Gagal melakukan review");
     } finally {
@@ -68,7 +68,7 @@ export default function ReviewConversionPage() {
       toast.success("Dokumen berhasil difinalisasi!");
       
       fetchData(); // Refresh data
-    } catch (error: any) {
+    } catch (error: unknown) {
       // PERBAIKAN DI SINI: Tangkap pesan error asli dari backend
       console.error("Detail Error:", error.response?.data);
       toast.error(error.response?.data?.message || "Gagal memproses finalisasi");
