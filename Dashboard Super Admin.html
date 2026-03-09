@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - KonverPro Central</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'], 
+                        heading: ['Poppins', 'sans-serif'] 
+                    },
+                    colors: {
+                        primary: { DEFAULT: '#094E8B', 50: '#e6eff7', 100: '#cce0f0', 500: '#094E8B', 800: '#06355e', 900: '#031f37' },
+                        secondary: { DEFAULT: '#FDD824', 500: '#FDD824', 600: '#e0bc04' },
+                        accent: { DEFAULT: '#F43F5E', 500: '#F43F5E' },
+                        surface: '#F8FAFC',
+                        sidebarLabel: '#e4ebed'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer components {
+            .sidebar-link {
+                @apply w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer mb-1 text-slate-400 hover:bg-white/5 hover:text-white;
+            }
+            .sidebar-link.active {
+                @apply bg-primary-800 text-white shadow-md border-l-4 border-secondary-500 rounded-l-none;
+            }
+            .sidebar-link.active i { @apply text-secondary-500; }
+            
+            .admin-card { @apply bg-white p-5 rounded-xl border border-slate-100 shadow-sm; }
+            
+            .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            
+            .animate-modal { animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards; }
+            @keyframes modalPop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+            
+            .badge-role { @apply px-2 py-0.5 rounded text-[9px] font-black uppercase border; }
+            .badge-super { @apply bg-primary-900 text-white border-primary-900; }
+            .badge-admin-kampus { @apply bg-blue-100 text-blue-700 border-blue-200; }
+            .badge-admin-prodi { @apply bg-purple-100 text-purple-700 border-purple-200; }
+
+            .tab-btn { @apply px-5 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition-all whitespace-nowrap; }
+            .tab-btn-active { @apply border-primary-900 text-primary-900 bg-primary-50/50; }
+            .tab-btn-inactive { @apply border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50; }
+
+            .nav-pill-container { @apply flex p-1.5 bg-slate-100 rounded-xl mb-6 border border-slate-200; }
+            .nav-pill-btn { @apply flex-1 py-3.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2; }
+            .nav-pill-active { @apply bg-white text-primary-900 shadow-sm ring-1 ring-black/5; }
+            .nav-pill-inactive { @apply text-slate-400 hover:text-slate-600 hover:bg-slate-200/50; }
+
+            .action-btn { @apply p-2 rounded-lg transition-colors flex items-center justify-center; }
+            .action-btn:hover { @apply bg-slate-50; }
+
+            /* Rich Text Editor Styles */
+            .rich-editor {
+                @apply w-full p-4 bg-white text-sm font-sans h-48 overflow-y-auto outline-none;
+            }
+            .rich-editor ul { list-style-type: disc; margin-left: 1.5em; }
+            .rich-editor ol { list-style-type: decimal; margin-left: 1.5em; }
+            .rich-editor b { font-weight: bold; }
+            .rich-editor i { font-style: italic; }
+
+            /* Custom Scrollbar */
+            .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; display: block; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-600 bg-surface min-h-screen flex flex-col overflow-hidden">
+
+    <!-- KONFIRMASI MODAL -->
+    <div id="modal-confirm" class="fixed inset-0 z-[250] hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] p-4">
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl animate-modal overflow-hidden">
+            <div class="p-6 text-center">
+                <div id="confirm-icon-bg" class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 bg-primary-50">
+                    <i id="confirm-icon" class="ph-bold ph-question text-2xl text-primary-600"></i>
+                </div>
+                <h3 id="confirm-title" class="text-base font-bold text-slate-900 mb-2">Konfirmasi Aksi</h3>
+                <p id="confirm-msg" class="text-sm text-slate-500 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            </div>
+            <div class="flex border-t border-slate-100">
+                <button onclick="closeConfirm()" class="flex-1 py-3 text-sm font-bold text-slate-400 hover:bg-slate-50 border-r border-slate-100">Batal</button>
+                <button id="btn-confirm-execute" class="flex-1 py-3 text-sm font-bold text-primary-600 hover:bg-primary-50 transition">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[300] flex flex-col gap-2"></div>
+
+    <!-- AUTH WRAPPER -->
+    <div id="auth-wrapper" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900">
+        <div class="relative bg-white w-full max-w-4xl h-[550px] rounded-2xl shadow-2xl overflow-hidden flex animate-fade-in">
+            <!-- Left Side -->
+            <div class="w-1/2 bg-primary-900 p-12 text-white flex flex-col justify-between hidden md:flex">
+                <div>
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-10 h-10 bg-secondary-500 rounded-lg flex items-center justify-center text-primary-900 shadow-lg">
+                            <i class="ph-bold ph-asterisk text-2xl"></i>
+                        </div>
+                        <h1 class="font-heading font-bold text-2xl tracking-tight">KonverPro <span class="font-light text-primary-300">Central</span></h1>
+                    </div>
+                    <h2 class="text-3xl font-heading font-bold leading-tight mb-4">Pusat Kendali Ekosistem Perguruan Tinggi.</h2>
+                    <p class="text-primary-200 text-sm leading-relaxed opacity-80">
+                        Platform terpusat untuk manajemen mitra kampus, konfigurasi tarif global, dan monitoring performa konversi RPL nasional.
+                    </p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-xl border border-white/10 flex gap-2">
+                    <button onclick="switchAuthMode('login')" id="tab-login" class="flex-1 py-2 rounded-lg text-xs font-bold uppercase bg-white text-primary-900 shadow-lg transition-all">Super Admin</button>
+                    <button onclick="switchAuthMode('register')" id="tab-register" class="flex-1 py-2 rounded-lg text-xs font-bold uppercase text-primary-200 hover:text-white transition-all">Registrasi Mitra</button>
+                </div>
+            </div>
+            <!-- Right Side -->
+            <div class="w-full md:w-1/2 p-12 flex flex-col justify-center bg-white">
+                <div id="form-login" class="animate-fade-in">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Login Portal</h3>
+                    <p class="text-slate-400 text-sm mb-8">Masuk ke pusat kendali sistem.</p>
+                    <form onsubmit="handleLogin(event)" class="space-y-4">
+                        <input type="email" value="root@konverpro.id" class="w-full px-5 py-3 bg-slate-50 rounded-lg border-none font-bold text-slate-900 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Email Super Admin">
+                        <input type="password" value="admin123" class="w-full px-5 py-3 bg-slate-50 rounded-lg border-none font-bold text-slate-900 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Password">
+                        <button class="w-full py-3 bg-primary-900 text-white rounded-lg font-bold uppercase text-xs tracking-widest hover:bg-primary-800 transition shadow-lg flex items-center justify-center gap-2">Masuk Dashboard <i class="ph-bold ph-arrow-right"></i></button>
+                    </form>
+                </div>
+                <div id="form-register" class="hidden animate-fade-in">
+                    <h3 class="text-2xl font-bold text-slate-900 mb-2">Registrasi Kampus</h3>
+                    <p class="text-slate-400 text-sm mb-6">Ajukan onboarding mitra baru.</p>
+                    <form onsubmit="handleRegister(event)" class="space-y-3">
+                        <input type="text" id="reg-campus-name" placeholder="Nama Perguruan Tinggi" class="w-full px-5 py-3 bg-slate-50 rounded-lg text-sm font-bold border-none outline-none">
+                        <input type="email" id="reg-email" placeholder="Email Admin Kampus" class="w-full px-5 py-3 bg-slate-50 rounded-lg text-sm font-bold border-none outline-none">
+                        <select id="reg-plan" class="w-full px-5 py-3 bg-slate-50 rounded-lg text-sm font-bold border-none outline-none">
+                            <option value="Enterprise">Paket Enterprise</option>
+                            <option value="Premium">Paket Premium</option>
+                        </select>
+                        <button type="submit" class="w-full py-3 bg-secondary-500 text-primary-900 rounded-lg font-bold uppercase text-xs tracking-widest mt-4 shadow-lg hover:bg-secondary-600">Kirim Pengajuan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="dashboard-wrapper" class="hidden flex h-screen overflow-hidden bg-surface">
+        <aside class="w-64 bg-primary-900 flex flex-col p-4 shadow-2xl z-30">
+            <div class="flex items-center gap-3 px-4 mb-8 mt-2">
+                <div class="w-9 h-9 bg-secondary-500 rounded-lg flex items-center justify-center text-primary-900 shadow-lg"><i class="ph-bold ph-asterisk text-xl"></i></div>
+                <div><h1 class="text-white font-heading font-bold text-base leading-none">KonverPro</h1><span class="text-[9px] text-primary-300 uppercase tracking-[0.2em] font-black">Super Control</span></div>
+            </div>
+            <nav class="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-2">
+                <div>
+                    <span class="px-4 text-[10px] uppercase font-black text-sidebarLabel tracking-widest block mb-2 opacity-100">Main Menu</span>
+                    <div onclick="switchPage('overview')" id="nav-overview" class="sidebar-link active"><div class="flex items-center gap-3"><i class="ph-bold ph-squares-four text-lg"></i> Overview</div></div>
+                    <div onclick="switchPage('kampus')" id="nav-kampus" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-buildings text-lg"></i> Manajemen Kampus</div><span id="badge-pending-sidebar" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-sm">0</span></div>
+                    <div onclick="switchPage('konversi')" id="nav-konversi" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-student text-lg"></i> Data Konversi</div></div>
+                </div>
+                <div>
+                    <span class="px-4 text-[10px] uppercase font-black text-sidebarLabel tracking-widest block mb-2 opacity-100">Keuangan & User</span>
+                    <div onclick="switchPage('finance')" id="nav-finance" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-wallet text-lg"></i> Top Up & Saldo</div><span id="badge-topup" class="hidden ml-auto bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-sm">0</span></div>
+                    <div onclick="switchPage('income-report')" id="nav-income-report" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-chart-pie text-lg"></i> Report Pemasukan</div></div>
+                    <div onclick="switchPage('users')" id="nav-users" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-users-three text-lg"></i> Manajemen User</div></div>
+                </div>
+                <div>
+                    <span class="px-4 text-[10px] uppercase font-black text-sidebarLabel tracking-widest block mb-2 opacity-100">System Control</span>
+                    <div onclick="switchPage('settings')" id="nav-settings" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-sliders-horizontal text-lg"></i> Config Global</div></div>
+                    <div onclick="switchPage('backup')" id="nav-backup" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-database text-lg"></i> Backup & Restore</div></div>
+                    <div onclick="switchPage('audit')" id="nav-audit" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-shield-check text-lg"></i> Audit Log</div></div>
+                    <div onclick="switchPage('notif')" id="nav-notif" class="sidebar-link"><div class="flex items-center gap-3"><i class="ph-bold ph-envelope-simple text-lg"></i> Notifikasi</div></div>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0">
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-20">
+                <h2 id="page-title" class="text-sm font-black text-primary-900 uppercase tracking-widest">Dashboard</h2>
+                <div class="relative group">
+                    <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 pl-4 border-l border-slate-100 hover:opacity-80 transition"><div class="text-right"><p class="text-xs font-black text-slate-900 leading-none">Super Admin</p><p class="text-[10px] text-slate-400 mt-1">root@konverpro.id</p></div><div class="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 border border-primary-200"><i class="ph-fill ph-user-circle text-xl"></i></div></button>
+                    <div id="profile-dropdown" class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 hidden py-2 animate-fade-in"><button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-black text-red-500 hover:bg-red-50 transition-colors"><i class="ph-bold ph-sign-out text-base"></i> Keluar Sistem</button></div>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                
+                <!-- Overview -->
+                <div id="page-overview" class="space-y-6 animate-fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="admin-card"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">Mitra Kampus</p><h3 class="text-3xl font-black text-slate-900" id="stat-total-campus">0</h3></div>
+                        <div class="admin-card"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">Top Up Antrean</p><h3 class="text-3xl font-black text-emerald-600" id="stat-pending-topup-count">0</h3></div>
+                        <div class="admin-card bg-primary-900 text-white shadow-xl shadow-primary-900/20"><p class="text-[10px] font-black uppercase text-primary-300 mb-2">Estimasi Revenue</p><h3 class="text-3xl font-black" id="stat-revenue">Rp 0</h3></div>
+                        <div class="admin-card"><p class="text-[10px] font-black uppercase text-slate-400 mb-2">Total Konversi</p><h3 class="text-3xl font-black text-slate-900" id="stat-total-students">0</h3></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="admin-card lg:col-span-2 h-80"><h4 class="text-xs font-black uppercase text-slate-900 mb-4 tracking-widest">Tren Pertumbuhan</h4><canvas id="chart-growth"></canvas></div>
+                         <div class="admin-card h-80 overflow-y-auto"><h4 class="text-xs font-black uppercase text-slate-900 mb-4 tracking-widest">Heatmap Performa Kampus</h4><div class="space-y-3" id="campus-heatmap"></div></div>
+                    </div>
+                </div>
+
+                <!-- Manajemen Kampus -->
+                <div id="page-kampus" class="hidden space-y-6 animate-fade-in">
+                    <div class="nav-pill-container">
+                        <button onclick="switchCampusTab('all')" id="ctab-all" class="nav-pill-btn nav-pill-active">Semua Mitra</button>
+                        <button onclick="switchCampusTab('pending')" id="ctab-pending" class="nav-pill-btn nav-pill-inactive">Menunggu Approval <span id="badge-pending-tab" class="hidden bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm min-w-[20px] text-center ml-2">0</span></button>
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="relative w-72"><input type="text" id="campus-search" oninput="renderTable()" placeholder="Cari Perguruan Tinggi..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-100 bg-white text-xs font-bold outline-none"><i class="ph-bold ph-magnifying-glass absolute left-3 top-3 text-slate-400"></i></div>
+                        <div class="flex gap-2">
+                             <button onclick="exportData('campus')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase hover:bg-slate-200 transition"><i class="ph-bold ph-download-simple mr-2"></i>Export PDF</button>
+                            <button onclick="openAddModal()" class="px-5 py-2.5 bg-primary-900 text-white rounded-lg text-xs font-black uppercase hover:bg-primary-800 flex items-center gap-2 shadow-lg transition"><i class="ph-bold ph-plus"></i> Registrasi Manual</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table class="w-full text-left"><thead class="bg-slate-50 text-[10px] uppercase font-black border-b border-slate-100"><tr><th class="p-5">Institusi</th><th class="p-5">Paket</th><th class="p-5 text-center">Partner</th><th class="p-5 text-center">Status</th><th class="p-5 text-right">Saldo</th><th class="p-5 text-right">Aksi</th></tr></thead><tbody id="table-campus-body" class="text-sm"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Report Pemasukan -->
+                <div id="page-income-report" class="hidden space-y-6 animate-fade-in">
+                    <div class="admin-card flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-black uppercase text-primary-900">Report Revenue Global</h2>
+                        <div class="flex gap-2">
+                             <button onclick="exportData('income')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase hover:bg-slate-200 transition"><i class="ph-bold ph-download-simple mr-2"></i>Export Excel</button>
+                            <select id="filter-income-campus" onchange="renderIncomeReport()" class="p-2 bg-slate-50 rounded-lg text-xs font-bold border-none outline-none"><option value="all">Seluruh Kampus</option></select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="admin-card text-center border-b-4 border-primary-900"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Total Pemasukan</p><h3 class="text-2xl font-black text-primary-900" id="report-income-total">Rp 0</h3></div>
+                        <div class="admin-card text-center border-b-4 border-blue-500"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Internal Conversion</p><h3 class="text-2xl font-black text-blue-600" id="report-income-internal">Rp 0</h3></div>
+                        <div class="admin-card text-center border-b-4 border-amber-500"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Lead Generation</p><h3 class="text-2xl font-black text-amber-600" id="report-income-leads">Rp 0</h3></div>
+                    </div>
+                    <div class="admin-card h-80"><canvas id="chart-income-split"></canvas></div>
+                </div>
+
+                <!-- Manajemen User -->
+                <div id="page-users" class="hidden space-y-6 animate-fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-black text-primary-900">Global User Directory</h2>
+                        <button onclick="openAddUserModal()" class="px-4 py-2 bg-primary-900 text-white rounded-lg text-xs font-black uppercase shadow-lg">+ Tambah User</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <table class="w-full text-left"><thead class="bg-slate-50 text-[10px] uppercase font-black"><tr><th class="p-5">Pengguna</th><th class="p-5">Peran</th><th class="p-5">Afiliasi</th><th class="p-5 text-right">Tindakan</th></tr></thead><tbody id="table-users-body" class="text-sm"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Data Konversi -->
+                <div id="page-konversi" class="hidden animate-fade-in">
+                    <div class="admin-card mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-xs font-black uppercase text-slate-900 tracking-widest">Top Kampus - Konversi Terbanyak</h4>
+                            <select id="filter-chart-konversi" onchange="renderTopConversionChart()" class="p-2 bg-slate-50 rounded-lg text-xs font-bold border-none outline-none">
+                                <option value="total">Total Konversi</option>
+                                <option value="internal">Konversi Internal</option>
+                                <option value="leads">Lead Acquisition</option>
+                            </select>
+                        </div>
+                        <div class="h-64"><canvas id="chart-top-conversions"></canvas></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="p-4 border-b border-slate-100 flex justify-end">
+                            <button onclick="exportData('conversion')" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase hover:bg-slate-200 transition"><i class="ph-bold ph-download-simple mr-2"></i>Export Data</button>
+                        </div>
+                        <table class="w-full text-left"><thead class="bg-slate-50 text-[10px] uppercase font-black border-b border-slate-100"><tr><th class="p-5">Institusi</th><th class="p-5 text-center">Internal</th><th class="p-5 text-center">Leads</th><th class="p-5 text-center">Total</th><th class="p-5 text-right">Aksi</th></tr></thead><tbody id="table-konversi-body" class="text-sm"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Audit Log -->
+                <div id="page-audit" class="hidden space-y-6 animate-fade-in">
+                    <h2 class="text-xl font-black uppercase text-primary-900 mb-6">Audit Trail System Log</h2>
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table class="w-full text-left"><thead class="bg-slate-50 text-[10px] uppercase font-black"><tr><th class="p-5">Waktu</th><th class="p-5">User</th><th class="p-5">Aksi</th><th class="p-5">Objek</th></tr></thead><tbody id="audit-log-body" class="text-xs"></tbody></table>
+                    </div>
+                </div>
+
+                <!-- Finance -->
+                <div id="page-finance" class="hidden space-y-6 animate-fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-black text-primary-900 uppercase">Top Up Approval Antrean</h2>
+                        <button onclick="simulateTopUpRequest()" class="text-xs font-bold text-primary-600 bg-primary-50 px-4 py-2 rounded-lg hover:bg-primary-100 transition-colors">Simulasi Request Baru</button>
+                    </div>
+                    <div id="finance-pending-body" class="space-y-3"></div>
+                </div>
+
+                <!-- Notifikasi Email -->
+                <div id="page-notif" class="hidden space-y-6 animate-fade-in">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-black text-primary-900 uppercase">Manajemen Template Email</h2>
+                        <button onclick="openNotifModal()" class="px-4 py-2 bg-primary-900 text-white rounded-lg text-xs font-bold uppercase shadow-lg">+ Buat Template</button>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table class="w-full text-left"><thead class="bg-slate-50 text-[10px] uppercase font-black border-b border-slate-100"><tr><th class="p-5">Nama Template</th><th class="p-5">Tipe Trigger</th><th class="p-5">Subjek Email</th><th class="p-5 text-right">Aksi</th></tr></thead><tbody id="table-notif-body" class="text-sm"></tbody></table>
+                    </div>
+                </div>
+                
+                 <!-- Backup & Restore -->
+                <div id="page-backup" class="hidden space-y-6 animate-fade-in">
+                    <div class="admin-card border-l-4 border-emerald-500">
+                        <h2 class="text-lg font-black text-slate-900">Backup & Restore Data Sistem</h2>
+                        <p class="text-xs text-slate-500 mt-1">Unduh cadangan data JSON atau pulihkan data dari file cadangan.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="admin-card space-y-4">
+                            <h4 class="text-xs font-black uppercase text-slate-400">Download Backup</h4>
+                            <p class="text-xs text-slate-500">Ekspor seluruh data Kampus, User, dan Transaksi ke file JSON aman.</p>
+                            <button onclick="backupData()" class="w-full py-4 bg-primary-900 text-white rounded-lg font-bold uppercase text-xs flex items-center justify-center gap-2"><i class="ph-bold ph-download-simple"></i> Download Database</button>
+                        </div>
+                        <div class="admin-card space-y-4">
+                            <h4 class="text-xs font-black uppercase text-slate-400">Restore Database</h4>
+                            <p class="text-xs text-slate-500">Pulihkan sistem dari file backup sebelumnya. Aksi ini akan menimpa data saat ini.</p>
+                            <input type="file" id="restore-file" class="hidden" onchange="restoreData(this)">
+                            <button onclick="document.getElementById('restore-file').click()" class="w-full py-4 bg-slate-100 text-slate-600 rounded-lg font-bold uppercase text-xs flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-200"><i class="ph-bold ph-upload-simple"></i> Upload Backup File</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Global -->
+                <div id="page-settings" class="hidden animate-fade-in">
+                      <div class="max-w-2xl mx-auto admin-card space-y-8">
+                        <div>
+                            <h3 class="text-sm font-black uppercase text-primary-900 mb-4 border-b pb-2">Konfigurasi Harga & Sistem</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Biaya Internal (Rp)</label><input type="number" id="conf-internal-rate" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Biaya Lead (Rp)</label><input type="number" id="conf-lead-rate" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Surcharge Partner (%)</label><input type="number" id="conf-partner-surcharge" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Pajak / PPN (%)</label><input type="number" id="conf-tax" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Min. Top Up (Rp)</label><input type="number" id="conf-min-topup" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                <div class="flex items-end pb-3">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" id="conf-maintenance" class="w-5 h-5 rounded text-primary-600 focus:ring-primary-500">
+                                        <label for="conf-maintenance" class="text-xs font-bold text-slate-700">Maintenance Mode</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-sm font-black uppercase text-primary-900 mb-4 border-b pb-2">Konfigurasi Email SMTP</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2"><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">SMTP Host</label><input type="text" id="conf-smtp-host" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500" placeholder="smtp.gmail.com"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">SMTP Port</label><input type="number" id="conf-smtp-port" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500" placeholder="587"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Encryption</label><select id="conf-smtp-enc" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none"><option>TLS</option><option>SSL</option></select></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Username</label><input type="text" id="conf-smtp-user" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-1 block">Password</label><input type="password" id="conf-smtp-pass" class="w-full p-3 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500"></div>
+                            </div>
+                        </div>
+
+                        <button onclick="saveGlobalSettings()" class="w-full py-4 bg-primary-900 text-white rounded-lg font-bold uppercase text-xs shadow-lg hover:bg-primary-800 transition-colors">Simpan Semua Konfigurasi</button>
+                     </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL FULL PAGE: MANAGE KAMPUS (UPDATED: Centered, Fixed Height) -->
+    <div id="modal-manage-campus" class="fixed inset-0 z-[150] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-hidden">
+        <!-- Modal Container: Centered, Max Width 5xl, Fixed Height 90vh -->
+        <div class="bg-white w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-modal">
+            
+            <!-- Header -->
+            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10 shrink-0">
+                <div>
+                    <h3 class="text-xl font-black text-slate-900 uppercase tracking-tight">Manajemen Kampus</h3>
+                    <p id="manage-campus-subtitle" class="text-sm text-slate-400 font-bold mt-1"></p>
+                </div>
+                <button onclick="closeManageModal()" class="w-10 h-10 rounded-full bg-slate-50 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-all">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="px-8 pt-4 border-b border-slate-50 flex gap-4 overflow-x-auto shrink-0 custom-scrollbar">
+                <button onclick="switchManageTab('info')" id="mtab-info" class="tab-btn tab-btn-active">Profil Dasar</button>
+                <button onclick="switchManageTab('prodi')" id="mtab-prodi" class="tab-btn tab-btn-inactive">Program Studi</button>
+                <button onclick="switchManageTab('config')" id="mtab-config" class="tab-btn tab-btn-inactive">Config & Tarif</button>
+                <button onclick="switchManageTab('campus-users')" id="mtab-campus-users" class="tab-btn tab-btn-inactive">Manajemen Akun</button>
+                <button onclick="switchManageTab('billing')" id="mtab-billing" class="tab-btn tab-btn-inactive">Billing</button>
+            </div>
+
+            <!-- Modal Content Body (Scrollable Vertical Only, Fills Remaining Space) -->
+            <div class="flex-1 overflow-y-auto overflow-x-hidden p-8 bg-slate-50/30 custom-scrollbar">
+                <div class="w-full">
+                    <input type="hidden" id="manage-campus-id">
+                    
+                    <!-- Tab: Profil Dasar -->
+                    <div id="mcontent-info" class="space-y-6 animate-fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-black uppercase text-slate-400">Nama Perguruan Tinggi</label>
+                                <input type="text" id="edit-campus-name" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold shadow-sm outline-none focus:border-primary-500">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-black uppercase text-slate-400">Email Utama</label>
+                                <input type="email" id="edit-campus-email" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold shadow-sm outline-none focus:border-primary-500">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-black uppercase text-slate-400">Alamat Korespondensi</label>
+                            <textarea id="edit-campus-address" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold shadow-sm h-32 outline-none focus:border-primary-500 resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Prodi -->
+                    <div id="mcontent-prodi" class="hidden space-y-6 animate-fade-in">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                            <h4 class="text-sm font-bold text-primary-900">Daftar Program Studi</h4>
+                            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                                <input type="text" id="new-prodi-name" placeholder="Nama Prodi Baru" class="flex-1 md:w-64 p-2 bg-white border rounded-lg text-xs font-bold outline-none">
+                                <select id="new-prodi-level" class="p-2 bg-white border rounded-lg text-xs font-bold outline-none"><option value="S1">S1</option><option value="D3">D3</option><option value="S2">S2</option></select>
+                                <button onclick="addProdi()" class="px-4 py-2 bg-primary-900 text-white rounded-lg text-xs font-bold shadow-lg hover:bg-primary-800 transition">Tambah</button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm w-full">
+                            <table class="w-full text-left table-fixed">
+                                <thead class="bg-slate-50 text-[10px] uppercase font-black border-b border-slate-100">
+                                    <tr>
+                                        <th class="p-4 w-20">Jenjang</th>
+                                        <th class="p-4">Nama Program Studi</th>
+                                        <th class="p-4 w-20 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="list-prodi-body" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Config -->
+                    <div id="mcontent-config" class="hidden space-y-8 animate-fade-in">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2"><label class="text-xs font-black uppercase text-slate-400">Status Akun</label><select id="edit-campus-status" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold outline-none"><option value="active">Active</option><option value="suspended">Suspended</option><option value="pending">Pending</option></select></div>
+                            <div class="space-y-2"><label class="text-xs font-black uppercase text-slate-400">Paket Sistem</label><select id="edit-campus-plan" onchange="handlePlanChange()" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold outline-none"><option value="Enterprise">Enterprise</option><option value="Premium">Premium</option></select></div>
+                        </div>
+                        <div class="p-6 bg-white rounded-xl border border-emerald-100 shadow-sm flex items-center gap-4">
+                            <div class="flex items-center h-5"><input type="checkbox" id="edit-campus-partner" class="w-5 h-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"></div>
+                            <div class="ml-2 text-sm"><label for="edit-campus-partner" class="font-bold text-emerald-900 block">Set as Official Partner</label><p class="text-xs text-emerald-600">Aktifkan border emas dan prioritas pada landing page.</p></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-black uppercase text-slate-400">Biaya Pendaftaran (Rp)</label>
+                                <input type="number" id="custom-reg-fee" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold outline-none" placeholder="0">
+                                <p class="text-xs text-slate-400 italic">Biaya formulir konversi.</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-black uppercase text-slate-400">Estimasi Biaya Kuliah (Rp)</label>
+                                <input type="number" id="custom-tuition-fee" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold outline-none" placeholder="0">
+                                <p class="text-xs text-slate-400 italic">Estimasi total biaya kuliah publik.</p>
+                            </div>
+                        </div>
+                        <div class="pt-8 border-t border-slate-200">
+                            <div class="flex items-center justify-between mb-6">
+                                <p class="text-sm font-black uppercase text-primary-900 tracking-widest">Override Tarif Khusus (Custom)</p>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="use-custom-rate" onchange="toggleCustomInputs()" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                                </label>
+                            </div>
+                            <div id="custom-rate-inputs" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase">Tarif Internal (Rp)</label><input type="number" id="custom-internal" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold outline-none"></div>
+                                <div class="space-y-2"><label class="text-xs font-bold text-slate-400 uppercase">Tarif Lead (Rp)</label><input type="number" id="custom-lead" class="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold outline-none"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Campus Users -->
+                    <div id="mcontent-campus-users" class="hidden space-y-6 animate-fade-in">
+                        <div class="flex flex-col md:flex-row justify-between items-center bg-blue-50 p-6 rounded-2xl border border-blue-100 gap-4">
+                            <p class="text-sm font-bold text-blue-900 text-center md:text-left">Daftar Akun Admin Kampus & Prodi</p>
+                            <button onclick="openAddUserModalFromCampus()" class="w-full md:w-auto px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 transition">Tambah Admin</button>
+                        </div>
+                        <div class="space-y-4" id="campus-users-list"></div>
+                    </div>
+
+                    <!-- Tab: Billing -->
+                    <div id="mcontent-billing" class="hidden space-y-8 animate-fade-in">
+                        <div class="bg-primary-900 p-10 rounded-3xl text-white shadow-2xl text-center">
+                            <p class="text-xs uppercase font-black text-primary-300 tracking-widest mb-2">Saldo Deposit Saat Ini</p>
+                            <h2 class="text-5xl font-black break-words" id="manage-campus-balance">Rp 0</h2>
+                        </div>
+                        <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                            <h4 class="text-xs font-black uppercase text-slate-400 tracking-widest mb-4">Adjust Balance Manual</h4>
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <input type="number" id="adjust-balance-amount" class="w-full flex-1 p-4 bg-slate-50 border-none rounded-xl font-black text-lg shadow-inner outline-none" placeholder="Nominal Rp">
+                                <button onclick="confirmAction('adjustBalance', true)" class="w-full md:w-auto px-8 py-4 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase hover:bg-emerald-700 shadow-lg transition transform active:scale-95">Tambah</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-8 py-5 border-t border-slate-200 bg-white flex justify-end gap-4 z-10 shrink-0">
+                <button onclick="closeManageModal()" class="px-6 py-3 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-xl uppercase tracking-widest transition">Batal</button>
+                <button onclick="confirmAction('saveCampusAll')" class="px-8 py-3 bg-primary-900 text-white rounded-xl text-xs font-black uppercase shadow-xl hover:bg-primary-800 transition transform hover:-translate-y-0.5">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL USER -->
+    <div id="modal-user" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-10 animate-modal text-center">
+            <h3 class="text-sm font-black uppercase mb-8 text-primary-900" id="modal-user-title">Registrasi User Baru</h3>
+            <div class="space-y-4 text-left">
+                <input type="hidden" id="user-edit-id">
+                <input type="text" id="user-name" placeholder="Nama Lengkap" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500">
+                <input type="email" id="user-email" placeholder="Email Address" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none outline-none focus:ring-2 focus:ring-primary-500">
+                <select id="user-role" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none"><option value="Super Admin">Super Admin</option><option value="Admin Kampus">Admin Kampus</option><option value="Admin Prodi">Admin Prodi</option></select>
+                <select id="user-campus" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none"><option value="none">Tanpa Afiliasi (Pusat)</option></select>
+                <button onclick="saveUser()" class="w-full py-4 bg-primary-900 text-white rounded-lg font-bold uppercase text-xs mt-6 shadow-xl hover:bg-black transition-colors">Simpan Data User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT NOTIFIKASI -->
+    <div id="modal-notif-edit" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-8 animate-modal">
+            <h3 class="text-sm font-black uppercase mb-6 text-primary-900">Edit Template Notifikasi</h3>
+            <input type="hidden" id="notif-edit-id">
+            <div class="space-y-4">
+                <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Subjek Email</label><input type="text" id="notif-subject" class="w-full p-3 bg-slate-50 rounded-lg font-bold"></div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase text-slate-400">Fungsi / Trigger Email</label>
+                    <select id="notif-trigger" class="w-full p-3 bg-slate-50 rounded-lg font-bold text-sm outline-none border border-slate-200"><option value="register_success">Pendaftaran Berhasil</option><option value="register_rejected">Pendaftaran Ditolak</option><option value="topup_success">Top Up Berhasil</option><option value="ba_issued">Berita Acara Terbit</option><option value="custom">Lainnya / Custom</option></select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase text-slate-400">Isi Email (Rich Text Simulator)</label>
+                    <div class="w-full bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="flex gap-2 p-2 border-b border-slate-200 bg-slate-100 rounded-t-lg"><button onclick="document.execCommand('bold',false,null)" class="p-1 hover:bg-slate-200 rounded text-slate-600" title="Bold"><i class="ph-bold ph-text-b"></i></button><button onclick="document.execCommand('italic',false,null)" class="p-1 hover:bg-slate-200 rounded text-slate-600" title="Italic"><i class="ph-bold ph-text-italic"></i></button><button onclick="document.execCommand('underline',false,null)" class="p-1 hover:bg-slate-200 rounded text-slate-600" title="Underline"><i class="ph-bold ph-text-underline"></i></button><div class="w-px h-6 bg-slate-300 mx-1"></div><button onclick="document.execCommand('insertUnorderedList',false,null)" class="p-1 hover:bg-slate-200 rounded text-slate-600" title="Bullet List"><i class="ph-bold ph-list-bullets"></i></button><button onclick="document.execCommand('insertOrderedList',false,null)" class="p-1 hover:bg-slate-200 rounded text-slate-600" title="Numbered List"><i class="ph-bold ph-list-numbers"></i></button></div>
+                        <div id="notif-body" class="rich-editor" contenteditable="true"></div>
+                    </div>
+                     <div class="flex flex-wrap gap-2 pt-2"><span onclick="insertPlaceholder('[ADMIN_NAME]')" class="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono cursor-pointer hover:bg-slate-200 border border-slate-200 text-slate-600 font-bold">[ADMIN_NAME]</span><span onclick="insertPlaceholder('[CAMPUS_NAME]')" class="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono cursor-pointer hover:bg-slate-200 border border-slate-200 text-slate-600 font-bold">[CAMPUS_NAME]</span><span onclick="insertPlaceholder('[AMOUNT]')" class="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono cursor-pointer hover:bg-slate-200 border border-slate-200 text-slate-600 font-bold">[AMOUNT]</span><span onclick="insertPlaceholder('[DATE]')" class="px-2 py-1 bg-slate-100 rounded text-[10px] font-mono cursor-pointer hover:bg-slate-200 border border-slate-200 text-slate-600 font-bold">[DATE]</span></div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6"><button onclick="document.getElementById('modal-notif-edit').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold uppercase text-xs">Batal</button><button onclick="saveNotifTemplate()" class="px-8 py-3 bg-primary-900 text-white rounded-lg font-bold uppercase text-xs shadow-lg">Simpan Template</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT STATS (DATA KONVERSI READ-ONLY) -->
+    <div id="modal-edit-stats" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-8 animate-modal">
+            <h3 class="text-sm font-black uppercase mb-6 text-primary-900 text-center">Detail Data Konversi</h3>
+            <input type="hidden" id="stats-edit-id">
+            <div class="space-y-4">
+                <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Jumlah Internal</label><input type="number" id="stats-internal" class="w-full p-3 bg-slate-100 rounded-lg font-bold text-slate-500 cursor-not-allowed" readonly></div>
+                <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Jumlah Leads</label><input type="number" id="stats-leads" class="w-full p-3 bg-slate-100 rounded-lg font-bold text-slate-500 cursor-not-allowed" readonly></div>
+                <div class="p-3 bg-amber-50 text-amber-700 text-[10px] rounded-lg border border-amber-100 text-center">Data ini bersifat read-only untuk menjaga integritas laporan.</div>
+                <button onclick="document.getElementById('modal-edit-stats').classList.add('hidden')" class="w-full py-3 bg-slate-100 text-slate-500 font-bold uppercase text-xs rounded-lg hover:bg-slate-200">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LIHAT DATA MAHASISWA -->
+    <div id="modal-view-conversion" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden animate-modal flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div><h3 class="text-base font-black text-slate-900 uppercase">Data Mahasiswa Konversi</h3><p class="text-xs text-slate-400" id="view-campus-name">Detail Mahasiswa</p></div>
+                <button onclick="document.getElementById('modal-view-conversion').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-lg"></i></button>
+            </div>
+            <div class="p-4 border-b border-slate-100 flex gap-4 bg-white">
+                 <select id="view-filter-status" onchange="refreshViewList()" class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none"><option value="all">Semua Status</option><option value="done">Sudah Dikonversi</option><option value="pending">Belum Dikonversi</option></select>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50/30">
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100"><h4 class="text-xs font-black uppercase text-blue-800 flex items-center gap-2"><i class="ph-bold ph-student"></i> Konversi Internal</h4><span class="text-[10px] font-bold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full" id="count-internal">0</span></div>
+                        <div id="view-internal-list" class="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100"><h4 class="text-xs font-black uppercase text-amber-700 flex items-center gap-2"><i class="ph-bold ph-funnel"></i> Lead Acquisition</h4><span class="text-[10px] font-bold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full" id="count-leads">0</span></div>
+                        <div id="view-lead-list" class="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADD CAMPUS -->
+    <div id="modal-add-campus" class="fixed inset-0 z-[150] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-10 animate-modal text-center">
+            <h3 class="text-sm font-black uppercase mb-8 text-primary-900">Registrasi Kampus Baru</h3>
+            <div class="space-y-4 text-left">
+                <input type="text" id="add-name" placeholder="Nama Kampus" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none">
+                <input type="email" id="add-email" placeholder="Email Admin" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none">
+                <select id="add-plan" class="w-full p-4 bg-slate-50 rounded-lg font-bold border-none"><option value="Enterprise">Enterprise</option><option value="Premium">Premium</option></select>
+                <button onclick="saveNewCampus()" class="w-full py-4 bg-primary-900 text-white rounded-lg font-bold uppercase text-xs mt-6 shadow-xl hover:bg-black transition-colors">Simpan Mitra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        const KEY_SUPER_SETTINGS = 'kp_super_settings_v9';
+        const KEY_CAMPUS_REGISTRY = 'kp_campus_registry_v9';
+        const KEY_GLOBAL_USERS = 'kp_global_users_v9';
+        const KEY_TOPUP_REQUESTS = 'kp_topup_requests_v9';
+        const KEY_AUDIT_LOGS = 'kp_audit_logs_v9';
+        const KEY_NOTIF_TEMPLATES = 'kp_notif_templates_v9';
+        
+        let APP_STATE = {
+            view: 'overview',
+            campusFilter: 'all',
+            settings: { internalRate: 150000, leadRate: 350000, partnerSurcharge: 25, tax: 11, minTopup: 500000, maintenance: false, smtp: {} },
+            campuses: [],
+            users: [],
+            topups: [],
+            auditLogs: [],
+            notifTemplates: [],
+            charts: {},
+            currentViewCampusId: null
+        };
+
+        // --- 1. CORE FUNCTIONS ---
+        function saveCampuses() { localStorage.setItem(KEY_CAMPUS_REGISTRY, JSON.stringify(APP_STATE.campuses)); renderStats(); renderTable(); renderKonversi(); renderIncomeReport(); renderCampusHeatmap(); }
+        function saveUsers() { localStorage.setItem(KEY_GLOBAL_USERS, JSON.stringify(APP_STATE.users)); renderUsers(); }
+        function saveTopups() { localStorage.setItem(KEY_TOPUP_REQUESTS, JSON.stringify(APP_STATE.topups)); renderFinance(); renderStats(); }
+        function saveGlobalConfig() { localStorage.setItem(KEY_SUPER_SETTINGS, JSON.stringify(APP_STATE.settings)); showToast('success', 'Konfigurasi disimpan.'); }
+        function saveNotifTemplates() { localStorage.setItem(KEY_NOTIF_TEMPLATES, JSON.stringify(APP_STATE.notifTemplates)); renderNotifTable(); }
+        function addAuditLog(user, action, target) { const log = { id: Date.now(), time: new Date().toLocaleString('id-ID'), user, action, target }; APP_STATE.auditLogs.unshift(log); if(APP_STATE.auditLogs.length > 50) APP_STATE.auditLogs.pop(); localStorage.setItem(KEY_AUDIT_LOGS, JSON.stringify(APP_STATE.auditLogs)); renderAuditLogs(); }
+
+        // --- 2. NAVIGATION & AUTH LOGIC ---
+        function switchPage(pageId) {
+            APP_STATE.view = pageId;
+            // Hide all pages
+            document.querySelectorAll('div[id^="page-"]').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            
+            // Show specific page
+            const target = document.getElementById(`page-${pageId}`);
+            if(target) target.classList.remove('hidden');
+            
+            // Activate Sidebar
+            const nav = document.getElementById(`nav-${pageId}`);
+            if(nav) nav.classList.add('active');
+
+            // Set Title
+            const titleMap = {
+                'overview': 'Dashboard Overview',
+                'kampus': 'Manajemen Mitra Kampus',
+                'konversi': 'Data Konversi & Leads',
+                'finance': 'Keuangan & Top Up',
+                'income-report': 'Laporan Pemasukan',
+                'users': 'Manajemen Pengguna',
+                'settings': 'Konfigurasi Global',
+                'backup': 'Backup & Restore',
+                'audit': 'Audit Log Sistem',
+                'notif': 'Template Notifikasi'
+            };
+            document.getElementById('page-title').textContent = titleMap[pageId] || 'Dashboard';
+
+            // Trigger specific renders
+            if (pageId === 'overview') { renderCharts(); }
+            if (pageId === 'konversi') { renderKonversi(); renderTopConversionChart(); }
+            if (pageId === 'income-report') { renderIncomeReport(); }
+            if (pageId === 'finance') { renderFinance(); }
+        }
+
+        function switchAuthMode(mode) {
+            if(mode === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('tab-login').classList.add('bg-white', 'text-primary-900', 'shadow-lg');
+                document.getElementById('tab-login').classList.remove('text-primary-200');
+                document.getElementById('tab-register').classList.remove('bg-white', 'text-primary-900', 'shadow-lg');
+                document.getElementById('tab-register').classList.add('text-primary-200');
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('tab-register').classList.add('bg-white', 'text-primary-900', 'shadow-lg');
+                document.getElementById('tab-register').classList.remove('text-primary-200');
+                document.getElementById('tab-login').classList.remove('bg-white', 'text-primary-900', 'shadow-lg');
+                document.getElementById('tab-login').classList.add('text-primary-200');
+            }
+        }
+
+        // --- 3. RENDERERS ---
+        function renderCampusHeatmap() {
+            const container = document.getElementById('campus-heatmap'); if(!container) return;
+            const sorted = [...APP_STATE.campuses].sort((a,b) => (b.stats.internal + b.stats.leads) - (a.stats.internal + a.stats.leads)).slice(0, 5);
+            container.innerHTML = sorted.map((c, i) => {
+                const total = c.stats.internal + c.stats.leads;
+                const intensity = i === 0 ? 'bg-emerald-500' : (i === 1 ? 'bg-emerald-400' : 'bg-emerald-300');
+                const width = Math.max(10, Math.min(100, (total / (sorted[0].stats.internal + sorted[0].stats.leads)) * 100));
+                return `<div class="flex items-center gap-3 text-xs"><span class="font-bold w-32 truncate">${c.name}</span><div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden"><div class="${intensity} h-full rounded-full" style="width: ${width}%"></div></div><span class="font-mono text-slate-500">${total}</span></div>`;
+            }).join('');
+        }
+
+        function renderNotifTable() {
+            const tbody = document.getElementById('table-notif-body'); if(!tbody) return;
+            tbody.innerHTML = APP_STATE.notifTemplates.map(t => {
+                const triggerLabel = t.trigger === 'register_success' ? 'Pendaftaran Berhasil' : t.trigger === 'register_rejected' ? 'Pendaftaran Ditolak' : t.trigger === 'topup_success' ? 'Top Up Berhasil' : t.trigger === 'ba_issued' ? 'BA Terbit' : 'Custom';
+                return `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="p-5 font-bold text-slate-900">${t.name}</td><td class="p-5 text-xs font-bold text-blue-600 uppercase">${triggerLabel}</td><td class="p-5 text-slate-500 italic">${t.subject}</td><td class="p-5 text-right flex justify-end gap-2"><button onclick="viewNotif(${t.id})" class="action-btn text-blue-500"><i class="ph-bold ph-eye"></i></button><button onclick="editNotif(${t.id})" class="action-btn text-slate-500"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="deleteNotif(${t.id})" class="action-btn text-red-500"><i class="ph-bold ph-trash"></i></button></td></tr>`;
+            }).join('');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-campus-body');
+            const searchVal = document.getElementById('campus-search') ? document.getElementById('campus-search').value.toLowerCase() : '';
+            const pendingCount = APP_STATE.campuses.filter(c => c.status === 'pending').length;
+            if(document.getElementById('badge-pending-tab')) { const b = document.getElementById('badge-pending-tab'); b.textContent = pendingCount; b.classList.toggle('hidden', pendingCount === 0); }
+            if(document.getElementById('badge-pending-sidebar')) { const s = document.getElementById('badge-pending-sidebar'); s.textContent = pendingCount; s.classList.toggle('hidden', pendingCount === 0); }
+            let list = APP_STATE.campuses;
+            if(APP_STATE.campusFilter === 'pending') list = list.filter(c => c.status === 'pending');
+            if(searchVal) list = list.filter(c => c.name.toLowerCase().includes(searchVal));
+            tbody.innerHTML = list.map(c => `<tr class="border-b border-slate-50 hover:bg-slate-50 transition"><td class="p-5 font-bold text-slate-900">${c.name}</td><td class="p-5"><span class="px-2 py-1 bg-slate-100 rounded text-[9px] font-black uppercase text-slate-500">${c.plan}</span></td><td class="p-5 text-center">${c.isPartner ? '<i class="ph-fill ph-crown text-amber-500 text-lg"></i>' : '-'}</td><td class="p-5 text-center"><span class="badge-role ${c.status === 'active' ? 'badge-admin-kampus' : 'bg-amber-100 text-amber-700 border-amber-200'}">${c.status}</span></td><td class="p-5 text-right font-mono font-bold text-slate-700">Rp ${c.balance.toLocaleString('id-ID')}</td><td class="p-5 text-right flex justify-end gap-2">${c.status === 'pending' ? `<button onclick="confirmAction('approveCampus', ${c.id})" class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-black mr-2 shadow-sm">APPROVE</button>` : ''}<button onclick="openManageModal(${c.id})" class="p-2 text-primary-600 hover:bg-primary-50 rounded-xl transition"><i class="ph-bold ph-gear-six text-lg"></i></button><button onclick="deleteCampus(${c.id})" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition" title="Hapus Kampus"><i class="ph-bold ph-trash text-lg"></i></button></td></tr>`).join('');
+        }
+
+        function renderKonversi() {
+            const tbody = document.getElementById('table-konversi-body');
+            if(!tbody) return;
+            tbody.innerHTML = APP_STATE.campuses.map(c => {
+                 const total = c.stats.internal + c.stats.leads;
+                 return `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="p-5 font-bold text-slate-900">${c.name}</td><td class="p-5 text-center text-blue-600 font-bold">${c.stats.internal}</td><td class="p-5 text-center text-amber-600 font-bold">${c.stats.leads}</td><td class="p-5 text-center font-black">${total}</td><td class="p-5 text-right"><button onclick="viewConversion(${c.id})" class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black hover:bg-slate-200">DETAIL</button></td></tr>`;
+            }).join('');
+        }
+
+        function renderIncomeReport() {
+            const filter = document.getElementById('filter-income-campus').value;
+            let targetCampuses = APP_STATE.campuses;
+            if(filter !== 'all') targetCampuses = APP_STATE.campuses.filter(c => c.id == filter);
+
+            let totalInc = 0, internalInc = 0, leadsInc = 0;
+            
+            targetCampuses.forEach(c => {
+                 let iRate = c.customRates ? c.customRates.internal : APP_STATE.settings.internalRate;
+                 let lRate = c.customRates ? c.customRates.lead : APP_STATE.settings.leadRate;
+                 if(!c.customRates && c.isPartner) lRate = lRate + (lRate * (APP_STATE.settings.partnerSurcharge / 100));
+                 
+                 const iVal = c.stats.internal * iRate;
+                 const lVal = c.stats.leads * lRate;
+                 internalInc += iVal;
+                 leadsInc += lVal;
+                 totalInc += (iVal + lVal);
+            });
+
+            document.getElementById('report-income-total').textContent = "Rp " + totalInc.toLocaleString('id-ID');
+            document.getElementById('report-income-internal').textContent = "Rp " + internalInc.toLocaleString('id-ID');
+            document.getElementById('report-income-leads').textContent = "Rp " + leadsInc.toLocaleString('id-ID');
+
+            // Render Chart Split
+            const ctx = document.getElementById('chart-income-split');
+            if(ctx) {
+                if(APP_STATE.charts.income) APP_STATE.charts.income.destroy();
+                APP_STATE.charts.income = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Internal Conversion', 'Lead Acquisition'],
+                        datasets: [{
+                            data: [internalInc, leadsInc],
+                            backgroundColor: ['#3B82F6', '#F59E0B'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        function renderTopConversionChart() {
+             const type = document.getElementById('filter-chart-konversi').value;
+             const ctx = document.getElementById('chart-top-conversions');
+             if(!ctx) return;
+             
+             const sorted = [...APP_STATE.campuses].sort((a,b) => {
+                 const valA = type === 'total' ? (a.stats.internal + a.stats.leads) : a.stats[type];
+                 const valB = type === 'total' ? (b.stats.internal + b.stats.leads) : b.stats[type];
+                 return valB - valA;
+             }).slice(0, 10); // Top 10
+
+             const labels = sorted.map(c => c.name);
+             const data = sorted.map(c => type === 'total' ? (c.stats.internal + c.stats.leads) : c.stats[type]);
+
+             if(APP_STATE.charts.topConv) APP_STATE.charts.topConv.destroy();
+             APP_STATE.charts.topConv = new Chart(ctx, {
+                 type: 'bar',
+                 data: {
+                     labels: labels,
+                     datasets: [{
+                         label: type.toUpperCase(),
+                         data: data,
+                         backgroundColor: '#094E8B',
+                         borderRadius: 4
+                     }]
+                 },
+                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+             });
+        }
+
+        // --- MANAGE CAMPUS PRODI LIST ---
+        function renderProdiList(campusId) {
+            const c = APP_STATE.campuses.find(x => x.id === campusId);
+            const tbody = document.getElementById('list-prodi-body');
+            if (!c.prodi || c.prodi.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-slate-400 italic text-xs">Belum ada data program studi.</td></tr>'; return; }
+            tbody.innerHTML = c.prodi.map((p, i) => `<tr class="border-b border-slate-50"><td class="p-4 font-bold text-primary-900 w-20">${p.level}</td><td class="p-4 font-medium text-slate-700">${p.name}</td><td class="p-4 text-right w-20"><button onclick="removeProdi(${i})" class="text-red-400 hover:text-red-600"><i class="ph-bold ph-trash"></i></button></td></tr>`).join('');
+        }
+        function addProdi() {
+            const id = parseInt(document.getElementById('manage-campus-id').value);
+            const idx = APP_STATE.campuses.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            const name = document.getElementById('new-prodi-name').value;
+            const level = document.getElementById('new-prodi-level').value;
+            if (!name) return showToast('error', 'Nama Prodi wajib diisi');
+            if (!APP_STATE.campuses[idx].prodi) APP_STATE.campuses[idx].prodi = [];
+            APP_STATE.campuses[idx].prodi.push({ name, level });
+            document.getElementById('new-prodi-name').value = '';
+            renderProdiList(id); saveCampuses(); showToast('success', 'Program Studi ditambahkan.');
+        }
+        function removeProdi(prodiIndex) {
+            const id = parseInt(document.getElementById('manage-campus-id').value);
+            const idx = APP_STATE.campuses.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            APP_STATE.campuses[idx].prodi.splice(prodiIndex, 1);
+            renderProdiList(id); saveCampuses(); showToast('info', 'Program Studi dihapus.');
+        }
+
+        // --- MANAGE CAMPUS ---
+        function openManageModal(id) {
+            const c = APP_STATE.campuses.find(x => x.id === id);
+            if(!c) return;
+            document.getElementById('manage-campus-id').value = id;
+            document.getElementById('manage-campus-subtitle').textContent = c.name;
+            document.getElementById('edit-campus-name').value = c.name;
+            document.getElementById('edit-campus-email').value = c.email;
+            document.getElementById('edit-campus-address').value = c.address || '';
+            document.getElementById('edit-campus-status').value = c.status;
+            document.getElementById('edit-campus-plan').value = c.plan;
+            document.getElementById('edit-campus-partner').checked = c.isPartner || false;
+            
+            handlePlanChange();
+            const hasCustom = c.customRates !== null;
+            document.getElementById('use-custom-rate').checked = hasCustom;
+            if(hasCustom) {
+                document.getElementById('custom-internal').value = c.customRates.internal;
+                document.getElementById('custom-lead').value = c.customRates.lead;
+            } else {
+                document.getElementById('custom-internal').value = APP_STATE.settings.internalRate;
+                document.getElementById('custom-lead').value = APP_STATE.settings.leadRate;
+            }
+            document.getElementById('custom-reg-fee').value = c.regFee || 0;
+            document.getElementById('custom-tuition-fee').value = c.tuitionFee || 0;
+
+            toggleCustomInputs();
+            renderCampusUsers(id);
+            renderProdiList(id);
+            switchManageTab('info');
+            document.getElementById('modal-manage-campus').classList.remove('hidden');
+        }
+
+        function switchManageTab(tab) {
+            ['info', 'prodi', 'config', 'campus-users', 'billing'].forEach(t => {
+                const content = document.getElementById('mcontent-'+t);
+                const btn = document.getElementById('mtab-'+t);
+                if(content) content.classList.toggle('hidden', t !== tab);
+                if(btn) btn.className = (t === tab) ? 'tab-btn tab-btn-active shrink-0' : 'tab-btn tab-btn-inactive shrink-0';
+            });
+            if(tab === 'billing') {
+                const id = parseInt(document.getElementById('manage-campus-id').value);
+                const c = APP_STATE.campuses.find(x => x.id === id);
+                document.getElementById('manage-campus-balance').textContent = "Rp " + (c.balance || 0).toLocaleString('id-ID');
+            }
+        }
+        
+        function handlePlanChange() {
+            const plan = document.getElementById('edit-campus-plan').value;
+            const partnerCheck = document.getElementById('edit-campus-partner');
+            if (plan === 'Premium') { partnerCheck.checked = false; partnerCheck.disabled = true; } else { partnerCheck.disabled = false; }
+        }
+
+        function toggleCustomInputs() {
+            const isChecked = document.getElementById('use-custom-rate').checked;
+            const container = document.getElementById('custom-rate-inputs');
+            container.style.opacity = isChecked ? "1" : "0.3"; container.style.pointerEvents = isChecked ? "auto" : "none";
+        }
+
+        function saveCampusAll() {
+            const id = parseInt(document.getElementById('manage-campus-id').value);
+            const idx = APP_STATE.campuses.findIndex(c => c.id === id);
+            if(idx === -1) return;
+            const useOverride = document.getElementById('use-custom-rate').checked;
+            APP_STATE.campuses[idx] = {
+                ...APP_STATE.campuses[idx],
+                name: document.getElementById('edit-campus-name').value,
+                email: document.getElementById('edit-campus-email').value,
+                address: document.getElementById('edit-campus-address').value,
+                status: document.getElementById('edit-campus-status').value,
+                plan: document.getElementById('edit-campus-plan').value,
+                isPartner: document.getElementById('edit-campus-partner').checked,
+                regFee: parseInt(document.getElementById('custom-reg-fee').value) || 0,
+                tuitionFee: parseInt(document.getElementById('custom-tuition-fee').value) || 0,
+                customRates: useOverride ? { internal: parseInt(document.getElementById('custom-internal').value) || 0, lead: parseInt(document.getElementById('custom-lead').value) || 0 } : null
+            };
+            addAuditLog('Admin', 'Update Institusi', APP_STATE.campuses[idx].name);
+            saveCampuses(); closeManageModal(); showToast('success', 'Perubahan disimpan.');
+        }
+
+        function deleteCampus(id) {
+            if(confirm('Yakin ingin menghapus kampus ini? Data tidak bisa dikembalikan.')) {
+                APP_STATE.campuses = APP_STATE.campuses.filter(c => c.id !== id);
+                addAuditLog('Admin', 'Hapus Kampus ID', id);
+                saveCampuses();
+                showToast('success', 'Kampus berhasil dihapus');
+            }
+        }
+        
+        function approveCampus(id) {
+            const idx = APP_STATE.campuses.findIndex(c => c.id === id);
+            if(idx > -1) {
+                APP_STATE.campuses[idx].status = 'active';
+                addAuditLog('Admin', 'Approve Kampus', APP_STATE.campuses[idx].name);
+                saveCampuses();
+                showToast('success', 'Kampus Disetujui');
+            }
+        }
+
+        // --- NOTIFICATION HANDLERS ---
+        function openNotifModal() {
+             document.getElementById('notif-subject').value = '';
+             document.getElementById('notif-body').innerHTML = '';
+             document.getElementById('notif-trigger').value = 'register_success';
+             document.getElementById('notif-edit-id').value = '';
+             document.getElementById('modal-notif-edit').classList.remove('hidden');
+        }
+
+        function editNotif(id) {
+            const t = APP_STATE.notifTemplates.find(x => x.id === id);
+            document.getElementById('notif-subject').value = t.subject;
+            document.getElementById('notif-body').innerHTML = t.body;
+            document.getElementById('notif-trigger').value = t.trigger || 'custom';
+            document.getElementById('notif-edit-id').value = id;
+            document.getElementById('modal-notif-edit').classList.remove('hidden');
+        }
+
+        function saveNotifTemplate() {
+            const id = parseInt(document.getElementById('notif-edit-id').value);
+            const subject = document.getElementById('notif-subject').value;
+            const body = document.getElementById('notif-body').innerHTML;
+            const trigger = document.getElementById('notif-trigger').value;
+            const triggerName = document.getElementById('notif-trigger').options[document.getElementById('notif-trigger').selectedIndex].text;
+            if (id) { const idx = APP_STATE.notifTemplates.findIndex(x => x.id === id); if (idx > -1) { APP_STATE.notifTemplates[idx] = { ...APP_STATE.notifTemplates[idx], subject, body, trigger, name: triggerName }; } } 
+            else { APP_STATE.notifTemplates.push({ id: Date.now(), name: triggerName, subject, body, trigger }); }
+            saveNotifTemplates(); document.getElementById('modal-notif-edit').classList.add('hidden'); showToast('success', 'Template disimpan.');
+        }
+
+        function insertPlaceholder(txt) {
+            const div = document.getElementById('notif-body');
+            div.focus();
+            document.execCommand('insertText', false, txt);
+        }
+
+        function deleteNotif(id) {
+            if(confirm('Hapus template ini?')) {
+                APP_STATE.notifTemplates = APP_STATE.notifTemplates.filter(t => t.id !== id);
+                saveNotifTemplates();
+                showToast('info', 'Template dihapus.');
+            }
+        }
+
+        function viewNotif(id) {
+            const t = APP_STATE.notifTemplates.find(x => x.id === id);
+            alert(`Preview:\n\nSubject: ${t.subject}\n\n${t.body.replace(/<[^>]*>?/gm, '')}`);
+        }
+
+        // --- Other Renderers ---
+        function renderFinance() {
+            const body = document.getElementById('finance-pending-body');
+            const pending = APP_STATE.topups.filter(t => t.status === 'pending');
+            body.innerHTML = pending.length === 0 ? '<div class="p-10 text-center text-slate-300 italic">Antrean kosong.</div>' : pending.map(t => `<div class="flex items-center justify-between p-5 bg-white rounded-xl border border-slate-100 shadow-sm"><div><p class="font-bold text-slate-900">${t.campusName}</p><p class="text-[9px] font-black uppercase text-amber-500 tracking-widest">Pending Verification</p></div><div class="flex items-center gap-5"><p class="font-black text-primary-900 text-lg">Rp ${t.amount.toLocaleString('id-ID')}</p><button onclick="confirmAction('approveTopUp', ${t.id})" class="px-6 py-2 bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase shadow-lg">Verify</button></div></div>`).join('');
+        }
+        function renderUsers() { const tbody = document.getElementById('table-users-body'); tbody.innerHTML = APP_STATE.users.map(u => { const aff = u.campusId ? (APP_STATE.campuses.find(c => c.id === u.campusId)?.name || 'Eks-Mitra') : 'Pusat (KonverPro)'; const roleClass = u.role === 'Super Admin' ? 'badge-super' : 'badge-admin-kampus'; return `<tr class="border-b border-slate-50 hover:bg-slate-50 transition"><td class="p-5 font-bold text-slate-900">${u.name}</td><td class="p-5 text-center"><span class="badge-role ${roleClass}">${u.role}</span></td><td class="p-5 text-xs font-bold text-slate-600">${aff}</td><td class="p-5 text-right flex justify-end gap-2"><button onclick="openUserModal(${u.id})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i class="ph-bold ph-pencil-simple"></i></button><button onclick="confirmAction('deleteUserExec', ${u.id})" class="p-2 text-slate-300 hover:text-red-500 transition"><i class="ph-bold ph-trash text-lg"></i></button></td></tr>`; }).join(''); }
+        function renderAuditLogs() { const body = document.getElementById('audit-log-body'); body.innerHTML = APP_STATE.auditLogs.map(l => `<tr class="border-b border-slate-50"><td class="p-5 text-slate-400 font-mono text-[10px]">${l.time}</td><td class="p-5 font-bold text-slate-700">${l.user}</td><td class="p-5 font-medium">${l.action}</td><td class="p-5 text-primary-600 font-bold">${l.target}</td></tr>`).join(''); }
+        function renderCampusUsers(campusId) { const container = document.getElementById('campus-users-list'); if(!container) return; const campusUsers = APP_STATE.users.filter(u => u.campusId === campusId); container.innerHTML = campusUsers.length === 0 ? '<p class="p-8 text-center text-slate-300 italic text-xs">Belum ada admin terdaftar.</p>' : campusUsers.map(u => `<div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm"><div><p class="text-xs font-black text-slate-900 leading-tight">${u.name}</p><p class="text-[10px] text-slate-400 font-bold">${u.email}</p></div><span class="badge-role ${u.role === 'Admin Prodi' ? 'badge-admin-prodi' : 'badge-admin-kampus'}">${u.role}</span></div>`).join(''); }
+        function renderStats() { let totalStu = 0, revTotal = 0; APP_STATE.campuses.forEach(c => { const s = c.stats || { internal: 0, leads: 0 }; totalStu += (s.internal + s.leads); let iRate = c.customRates ? c.customRates.internal : APP_STATE.settings.internalRate; let lRate = c.customRates ? c.customRates.lead : APP_STATE.settings.leadRate; if(!c.customRates && c.isPartner) lRate = lRate + (lRate * (APP_STATE.settings.partnerSurcharge / 100)); revTotal += (s.internal * iRate) + (s.leads * lRate); }); document.getElementById('stat-total-campus').textContent = APP_STATE.campuses.length; document.getElementById('stat-total-students').textContent = totalStu.toLocaleString('id-ID'); document.getElementById('stat-revenue').textContent = "Rp " + (revTotal/1000000).toFixed(1) + " Jt"; const pendingTopup = APP_STATE.topups.filter(t => t.status === 'pending').length; document.getElementById('stat-pending-topup-count').textContent = pendingTopup; const badge = document.getElementById('badge-topup'); if(badge) { badge.textContent = pendingTopup; badge.classList.toggle('hidden', pendingTopup === 0); } }
+
+        // --- Other Standard Actions ---
+        function approveTopUp(id) { const tidx = APP_STATE.topups.findIndex(t => t.id === id); if(tidx === -1) return; const t = APP_STATE.topups[tidx]; const cidx = APP_STATE.campuses.findIndex(c => c.id === t.campusId); if(cidx > -1) { APP_STATE.campuses[cidx].balance += t.amount; APP_STATE.topups[tidx].status = 'approved'; addAuditLog('System', 'Verify Top Up', APP_STATE.campuses[cidx].name); saveCampuses(); saveTopups(); showToast('success', 'Top Up disetujui.'); } }
+        function adjustBalance(isAdding) { const id = parseInt(document.getElementById('manage-campus-id').value); const amt = parseInt(document.getElementById('adjust-balance-amount').value); const idx = APP_STATE.campuses.findIndex(c => c.id === id); if(idx > -1 && amt > 0) { APP_STATE.campuses[idx].balance += amt; addAuditLog('Admin', 'Adjust Saldo Manual', APP_STATE.campuses[idx].name); saveCampuses(); document.getElementById('manage-campus-balance').textContent = "Rp " + APP_STATE.campuses[idx].balance.toLocaleString('id-ID'); document.getElementById('adjust-balance-amount').value = ''; showToast('success', 'Saldo diperbarui.'); } }
+        function openAddUserModalFromCampus() { const currentId = parseInt(document.getElementById('manage-campus-id').value); openUserModal(); document.getElementById('user-campus').value = currentId; }
+        function openUserModal(id = null) { const title = document.getElementById('modal-user-title'); const name = document.getElementById('user-name'); const email = document.getElementById('user-email'); const role = document.getElementById('user-role'); const campus = document.getElementById('user-campus'); const editId = document.getElementById('user-edit-id'); campus.innerHTML = '<option value="none">Tanpa Afiliasi (Pusat)</option>'; APP_STATE.campuses.forEach(c => { campus.innerHTML += `<option value="${c.id}">${c.name}</option>`; }); if(id) { const u = APP_STATE.users.find(x => x.id === id); title.textContent = "Edit Data User"; name.value = u.name; email.value = u.email; role.value = u.role; campus.value = u.campusId || 'none'; editId.value = id; } else { title.textContent = "Registrasi User Baru"; name.value = ''; email.value = ''; role.value = 'Super Admin'; campus.value = 'none'; editId.value = ''; } document.getElementById('modal-user').classList.remove('hidden'); }
+        function saveUser() { const id = document.getElementById('user-edit-id').value; const name = document.getElementById('user-name').value; const email = document.getElementById('user-email').value; const role = document.getElementById('user-role').value; const campusId = document.getElementById('user-campus').value === 'none' ? null : parseInt(document.getElementById('user-campus').value); if(!name || !email) return showToast('error', 'Lengkapi data.'); if(id) { const idx = APP_STATE.users.findIndex(u => u.id == id); if(idx > -1) { APP_STATE.users[idx] = { ...APP_STATE.users[idx], name, email, role, campusId }; showToast('success', 'Data user diperbarui.'); } } else { APP_STATE.users.push({ id: Date.now(), name, email, role, campusId }); showToast('success', 'User baru ditambahkan.'); } saveUsers(); document.getElementById('modal-user').classList.add('hidden'); }
+        function deleteUserExec(id) { APP_STATE.users = APP_STATE.users.filter(u => u.id !== id); saveUsers(); const cid = parseInt(document.getElementById('manage-campus-id').value); if(cid) renderCampusUsers(cid); showToast('info', 'Akses dicabut.'); }
+        
+        // --- SETTINGS ---
+        function saveGlobalSettings() {
+             APP_STATE.settings.internalRate = parseInt(document.getElementById('conf-internal-rate').value) || 0;
+             APP_STATE.settings.leadRate = parseInt(document.getElementById('conf-lead-rate').value) || 0;
+             APP_STATE.settings.partnerSurcharge = parseInt(document.getElementById('conf-partner-surcharge').value) || 0;
+             APP_STATE.settings.tax = parseInt(document.getElementById('conf-tax').value) || 0;
+             APP_STATE.settings.minTopup = parseInt(document.getElementById('conf-min-topup').value) || 0;
+             APP_STATE.settings.maintenance = document.getElementById('conf-maintenance').checked;
+             APP_STATE.settings.smtp = {
+                 host: document.getElementById('conf-smtp-host').value,
+                 port: document.getElementById('conf-smtp-port').value,
+                 user: document.getElementById('conf-smtp-user').value,
+                 pass: document.getElementById('conf-smtp-pass').value
+             };
+             saveGlobalConfig();
+        }
+
+        function switchCampusTab(type) {
+             APP_STATE.campusFilter = type;
+             document.getElementById('ctab-all').className = type === 'all' ? 'nav-pill-btn nav-pill-active' : 'nav-pill-btn nav-pill-inactive';
+             document.getElementById('ctab-pending').className = type === 'pending' ? 'nav-pill-btn nav-pill-active' : 'nav-pill-btn nav-pill-inactive';
+             renderTable();
+        }
+        
+        function backupData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(APP_STATE));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "konverpro_backup_" + Date.now() + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+        
+        function restoreData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.campuses) {
+                        APP_STATE = data;
+                        saveCampuses(); saveUsers(); saveTopups(); saveNotifTemplates(); saveGlobalConfig();
+                        showToast('success', 'Data dipulihkan!');
+                        location.reload();
+                    } else { showToast('error', 'Format backup salah'); }
+                } catch(err) { showToast('error', 'Gagal membaca file'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportData(type) {
+            showToast('info', 'Sedang mengunduh data ' + type + '...');
+        }
+
+        // --- Utils ---
+        function confirmAction(key, p) { document.getElementById('modal-confirm').classList.remove('hidden'); document.getElementById('btn-confirm-execute').onclick = () => { window[key](p); closeConfirm(); }; }
+        function closeConfirm() { document.getElementById('modal-confirm').classList.add('hidden'); }
+        function closeManageModal() { document.getElementById('modal-manage-campus').classList.add('hidden'); }
+        function toggleProfileDropdown() { document.getElementById('profile-dropdown').classList.toggle('hidden'); }
+        function toggleCustomInputs() { const isChecked = document.getElementById('use-custom-rate').checked; const container = document.getElementById('custom-rate-inputs'); container.style.opacity = isChecked ? "1" : "0.3"; container.style.pointerEvents = isChecked ? "auto" : "none"; }
+        function handleLogout() { location.reload(); }
+        function handleLogin(e) { e.preventDefault(); document.getElementById('auth-wrapper').classList.add('hidden'); document.getElementById('dashboard-wrapper').classList.remove('hidden'); switchPage('overview'); }
+        function handleRegister(e) { e.preventDefault(); const n = document.getElementById('reg-campus-name').value; APP_STATE.campuses.unshift({ id: Date.now(), name: n, email: document.getElementById('reg-email').value, plan: document.getElementById('reg-plan').value, status: 'pending', balance: 0, stats: { internal: 0, leads: 0 }, customRates: null }); saveCampuses(); showToast('success', 'Pengajuan pendaftaran dikirim.'); switchAuthMode('login'); }
+        function openAddModal() { document.getElementById('modal-add-campus').classList.remove('hidden'); }
+        function openAddUserModal() { openUserModal(); }
+        function saveNewCampus() { const name = document.getElementById('add-name').value; APP_STATE.campuses.unshift({ id: Date.now(), name, email: document.getElementById('add-email').value, plan: document.getElementById('add-plan').value, status: 'active', balance: 0, stats: { internal: 0, leads: 0 }, customRates: null }); addAuditLog('Admin', 'Add Campus', name); saveCampuses(); document.getElementById('modal-add-campus').classList.add('hidden'); showToast('success', 'Mitra aktif.'); }
+        function simulateTopUpRequest() { const active = APP_STATE.campuses.filter(c => c.status === 'active'); if(active.length === 0) return; const r = active[Math.floor(Math.random() * active.length)]; APP_STATE.topups.unshift({ id: Date.now(), campusId: r.id, campusName: r.name, amount: 2000000, status: 'pending' }); saveTopups(); showToast('info', 'Simulasi: Request Top Up baru.'); }
+        
+        function renderCharts() { 
+            const ctx = document.getElementById('chart-growth'); 
+            if(!ctx) return; 
+            if(APP_STATE.charts.growth) APP_STATE.charts.growth.destroy(); 
+            APP_STATE.charts.growth = new Chart(ctx, { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'], datasets: [{ label: 'Mitra', data: [5, 12, 18, 25, 30, APP_STATE.campuses.length], borderColor: '#094E8B', tension: 0.4, fill: true, backgroundColor: 'rgba(9, 78, 139, 0.05)' }] }, options: { responsive: true, maintainAspectRatio: false } }); renderCampusHeatmap(); 
+        }
+        
+        function loadSettingsToForm() { document.getElementById('conf-internal-rate').value = APP_STATE.settings.internalRate; document.getElementById('conf-lead-rate').value = APP_STATE.settings.leadRate; document.getElementById('conf-partner-surcharge').value = APP_STATE.settings.partnerSurcharge; document.getElementById('conf-tax').value = APP_STATE.settings.tax || 11; document.getElementById('conf-min-topup').value = APP_STATE.settings.minTopup || 500000; document.getElementById('conf-maintenance').checked = APP_STATE.settings.maintenance || false; if(APP_STATE.settings.smtp) { document.getElementById('conf-smtp-host').value = APP_STATE.settings.smtp.host || ''; document.getElementById('conf-smtp-port').value = APP_STATE.settings.smtp.port || ''; document.getElementById('conf-smtp-user').value = APP_STATE.settings.smtp.user || ''; document.getElementById('conf-smtp-pass').value = APP_STATE.settings.smtp.pass || ''; } }
+        function showToast(type, msg) { const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const colors = { success: 'bg-emerald-500', error: 'bg-red-500', info: 'bg-primary-900' }; toast.className = `${colors[type]} text-white px-6 py-4 rounded-xl shadow-2xl animate-fade-in text-xs font-black uppercase tracking-widest`; toast.textContent = msg; container.appendChild(toast); setTimeout(() => toast.remove(), 4000); }
+        
+        // --- Data Conversion & Report Views ---
+        function viewConversion(id) { 
+            APP_STATE.currentViewCampusId = id;
+            const c = APP_STATE.campuses.find(x => x.id === id);
+            if(!c) return;
+            document.getElementById('view-campus-name').textContent = "Detail: " + c.name;
+            refreshViewList(); 
+            document.getElementById('modal-view-conversion').classList.remove('hidden');
+        }
+        function refreshViewList() {
+            const id = APP_STATE.currentViewCampusId;
+            const c = APP_STATE.campuses.find(x => x.id === id);
+            if(!c) return;
+            const filter = document.getElementById('view-filter-status').value;
+            const generateMockStudents = (count, type) => { let students = []; for(let i=0; i<count; i++) { const isDone = Math.random() > 0.3; const status = isDone ? 'Selesai' : 'Pending'; const sks = isDone ? Math.floor(Math.random() * 60 + 20) : 0; students.push({ name: `Mhs ${type} ${i+1}`, status, sks }); } return students; };
+            let internalStudents = generateMockStudents(c.stats.internal, 'Internal');
+            let leadStudents = generateMockStudents(c.stats.leads, 'Lead');
+            if (filter === 'done') { internalStudents = internalStudents.filter(s => s.status === 'Selesai'); leadStudents = leadStudents.filter(s => s.status === 'Selesai'); } 
+            else if (filter === 'pending') { internalStudents = internalStudents.filter(s => s.status === 'Pending'); leadStudents = leadStudents.filter(s => s.status === 'Pending'); }
+            const renderList = (list) => { if (list.length === 0) return '<p class="text-slate-400 italic text-xs text-center py-4">Tidak ada data.</p>'; return list.map(s => ` <div class="p-3 bg-white border border-slate-100 rounded-lg text-xs flex justify-between items-center mb-2 shadow-sm"> <div> <span class="font-bold text-slate-700 block">${s.name}</span> <span class="text-[10px] text-slate-400">Teknik Informatika</span> </div> <div class="text-right"> <span class="font-bold ${s.status === 'Selesai' ? 'text-emerald-600' : 'text-amber-500'} block">${s.status}</span> <span class="text-[9px] font-mono bg-slate-100 px-1 rounded">${s.sks} SKS</span> </div> </div> `).join(''); };
+            document.getElementById('view-internal-list').innerHTML = renderList(internalStudents);
+            document.getElementById('view-lead-list').innerHTML = renderList(leadStudents);
+            document.getElementById('count-internal').textContent = internalStudents.length;
+            document.getElementById('count-leads').textContent = leadStudents.length;
+        }
+
+        // --- Init ---
+        function loadData() {
+            const savedSettings = localStorage.getItem(KEY_SUPER_SETTINGS);
+            if(savedSettings) APP_STATE.settings = { ...APP_STATE.settings, ...JSON.parse(savedSettings) };
+            
+            const savedCampuses = localStorage.getItem(KEY_CAMPUS_REGISTRY);
+            if(savedCampuses) { APP_STATE.campuses = JSON.parse(savedCampuses); } else { APP_STATE.campuses = [ { id: 1, name: "Universitas Siber Asia", email: "admin@unsia.ac.id", status: "active", plan: "Enterprise", isPartner: true, stats: { internal: 245, leads: 82 }, balance: 8500000, customRates: null }, { id: 2, name: "Institut Digital Nasional", email: "info@idn.ac.id", status: "pending", plan: "Premium", isPartner: false, stats: { internal: 0, leads: 0 }, balance: 0, customRates: null }, { id: 3, name: "STMM Yogyakarta", email: "staff@stmm.ac.id", status: "active", plan: "Premium", isPartner: false, stats: { internal: 42, leads: 0 }, balance: 1200000, customRates: { internal: 120000, lead: 300000 } } ]; saveCampuses(); }
+            
+            const savedUsers = localStorage.getItem(KEY_GLOBAL_USERS);
+            if(savedUsers) { APP_STATE.users = JSON.parse(savedUsers); } else { APP_STATE.users = [ { id: 101, name: "Ahmad Rizky", email: "root@konverpro.id", role: "Super Admin", campusId: null }, { id: 102, name: "Siti Sarah", email: "sarah@unsia.ac.id", role: "Admin Kampus", campusId: 1 }, { id: 103, name: "Bambang Wid", email: "bambang@stmm.ac.id", role: "Admin Prodi", campusId: 3 } ]; saveUsers(); }
+            
+            const savedNotifs = localStorage.getItem(KEY_NOTIF_TEMPLATES);
+            if(savedNotifs) { APP_STATE.notifTemplates = JSON.parse(savedNotifs); } else { APP_STATE.notifTemplates = [ { id: 1, name: "Pendaftaran Berhasil", trigger: "register_success", subject: "Selamat Bergabung di KonverPro", body: "Halo [ADMIN_NAME], Pendaftaran [CAMPUS_NAME] sukses." }, { id: 2, name: "Top Up Berhasil", trigger: "topup_success", subject: "Konfirmasi Top Up Saldo", body: "Saldo Anda telah bertambah sebesar [AMOUNT]." } ]; saveNotifTemplates(); }
+            
+            const savedTopups = localStorage.getItem(KEY_TOPUP_REQUESTS);
+            if(savedTopups) APP_STATE.topups = JSON.parse(savedTopups);
+            
+            const savedLogs = localStorage.getItem(KEY_AUDIT_LOGS);
+            if(savedLogs) APP_STATE.auditLogs = JSON.parse(savedLogs);
+
+            loadSettingsToForm();
+            renderIncomeReport();
+            
+            // Perbaiki filter select di halaman kampus
+            const filterIncome = document.getElementById('filter-income-campus');
+            if(filterIncome) {
+                filterIncome.innerHTML = '<option value="all">Seluruh Kampus</option>';
+                APP_STATE.campuses.forEach(c => {
+                    filterIncome.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            // Default Start:
+            // Jika ingin langsung masuk dashboard (skip login) aktifkan baris bawah:
+            // document.getElementById('auth-wrapper').classList.add('hidden'); document.getElementById('dashboard-wrapper').classList.remove('hidden'); switchPage('overview');
+        });
+    </script>
+</body>
+</html>

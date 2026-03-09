@@ -1,30 +1,62 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "@/lib/axios"; // Pakai axios custom kita
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileCheck, AlertCircle, Wallet, Loader2 } from "lucide-react";
+import axios from "@/lib/axios";
+import { 
+  UserPlus, 
+  ChartBar, 
+  TrendUp,
+  CircleNotch,
+  CheckCircle,
+  Clock,
+  ArrowRight,
+  Student,
+  CurrencyCircleDollar,
+  Briefcase,
+  ListChecks,
+  Warning
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
+} from "recharts";
+import Link from "next/link";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     total_conversions: 0,
     pending_review: 0,
     approved: 0,
-    balance: 0
+    balance: 0,
+    prodi_aktif: 0
   });
   const [loading, setLoading] = useState(true);
 
-  // FETCH DATA DARI API LARAVEL
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await axios.get('/admin/dashboard-stats');
-        setStats(response.data.data);
-        setLoading(false);
+        setStats({
+          total_conversions: response.data?.data?.total_conversions || 0,
+          pending_review: response.data?.data?.pending_review || 0,
+          approved: response.data?.data?.approved || 0,
+          balance: response.data?.data?.balance || 0,
+          prodi_aktif: response.data?.data?.prodi_aktif || 3
+        });
       } catch (error) {
         console.error("Gagal load stats:", error);
         toast.error("Gagal memuat statistik dashboard");
+      } finally {
         setLoading(false);
       }
     };
@@ -32,80 +64,243 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
+  const mainChartData = [
+    { name: 'S1 Informatika', pendaftar: 42 },
+    { name: 'S1 Sistem Informasi', pendaftar: 29 },
+    { name: 'S1 Manajemen', pendaftar: 18 },
+    { name: 'D3 Akuntansi', pendaftar: 12 },
+    { name: 'S1 Psikologi', pendaftar: 8 },
+  ];
+
+  const trendData = [
+    { month: 'Jan', pendaftar: 15 },
+    { month: 'Feb', pendaftar: 22 },
+    { month: 'Mar', pendaftar: 31 },
+    { month: 'Apr', pendaftar: 28 },
+    { month: 'Mei', pendaftar: 45 },
+    { month: 'Jun', pendaftar: 52 },
+  ];
+
+  const recentActivity = [
+    { id: 1, name: "Budi Santoso", prodi: "Teknik Informatika", time: "5 menit yang lalu", status: "Pending" },
+    { id: 2, name: "Siti Aminah", prodi: "Sistem Informasi", time: "2 jam yang lalu", status: "Approved" },
+    { id: 3, name: "Andi Wijaya", prodi: "Manajemen", time: "5 jam yang lalu", status: "Draft" },
+  ];
+
   if (loading) {
-    return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-blue-600 w-8 h-8" /></div>;
+    return (
+      <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
+        <CircleNotch weight="bold" className="animate-spin text-[#094E8B] w-12 h-12" />
+        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Menyipakan Analytics...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">Dashboard Overview</h2>
-        <p className="text-slate-500">Statistik real-time aktivitas konversi SKS.</p>
-      </div>
-
-      {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        {/* TOTAL PENDAFTAR */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Pendaftar</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total_conversions}</div>
-            <p className="text-xs text-slate-500 mt-1">Mahasiswa</p>
-          </CardContent>
-        </Card>
-        
-        {/* MENUNGGU REVIEW */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Menunggu Review</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.pending_review}</div>
-            <p className="text-xs text-slate-500 mt-1">Butuh tindakan segera</p>
-          </CardContent>
-        </Card>
-
-        {/* SUKSES / APPROVED */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Selesai/Approved</CardTitle>
-            <FileCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-            <p className="text-xs text-slate-500 mt-1">Konversi valid</p>
-          </CardContent>
-        </Card>
-
-        {/* SISA SALDO */}
-        <Card className="bg-slate-900 text-white border-slate-800">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Sisa Saldo</CardTitle>
-            <Wallet className="h-4 w-4 text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-                Rp {Number(stats.balance).toLocaleString('id-ID')}
+    <div className="space-y-8 lg:space-y-10 animate-fade-in-quick">
+      
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h2 className="font-heading text-lg lg:text-xl font-black tracking-tight text-[#001a33] uppercase">
+            Dashboard Analytics
+          </h2>
+          <p className="text-slate-400 text-xs lg:text-sm">
+            Pemantauan validasi SKS dan pendaftaran institusi secara real-time.
+          </p>
+        </div>
+        <div className="flex gap-3 w-full md:w-auto">
+            <Link href="/admin/conversions" className="flex-1 md:flex-none">
+                <button className="w-full bg-[#094E8B] text-white px-6 py-3.5 rounded-xl text-xs font-black shadow-xl shadow-blue-900/20 hover:bg-[#073e6f] transition flex items-center justify-center gap-2">
+                <ListChecks weight="bold" className="text-lg" /> Validasi Berkas
+                </button>
+            </Link>
+        </div>
+      </header>
+      
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
+        <div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-100 transition"></div>
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Total Selesai</p>
+                <Student weight="duotone" className="text-xl text-blue-500" />
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-                {stats.balance > 15000 
-                    ? "Saldo aman" 
-                    : "Segera Top-Up!"}
-            </p>
-          </CardContent>
-        </Card>
+            <h4 className="text-3xl lg:text-4xl font-black text-[#001a33]">{stats.approved || 0}</h4>
+            <div className="mt-3 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                <span className="text-[9px] font-black text-emerald-600 uppercase">Terverifikasi</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-purple-100 transition"></div>
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Prodi Aktif</p>
+                <Briefcase weight="duotone" className="text-xl text-purple-500" />
+            </div>
+            <h4 className="text-3xl lg:text-4xl font-black text-[#001a33]">{stats.prodi_aktif || 0}</h4>
+            <div className="mt-3 flex items-center gap-1.5">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Database Kurikulum</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative ring-2 ring-orange-100 bg-orange-50/10">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-100 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-orange-200 transition"></div>
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] font-black uppercase text-orange-400 tracking-widest">Perlu Atensi</p>
+                <Warning weight="duotone" className="text-xl text-orange-500" />
+            </div>
+            <h4 className="text-3xl lg:text-4xl font-black text-orange-500">{stats.pending_review || 0}</h4>
+            <div className="mt-3 flex items-center gap-1.5">
+                <span className="text-[9px] font-black text-orange-600 uppercase">Input Review Baru</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-[#094E8B] p-6 lg:p-8 rounded-3xl border border-blue-800 shadow-xl shadow-blue-900/20 hover:shadow-2xl transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-110 transition-transform"></div>
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex justify-between items-start mb-4 text-blue-200">
+                <p className="text-[10px] font-black uppercase tracking-widest">Saldo Quota</p>
+                <CurrencyCircleDollar weight="duotone" className="text-xl text-amber-400" />
+            </div>
+            <h4 className="text-xl lg:text-2xl font-black text-white truncate">
+              Rp {Number(stats.balance || 0).toLocaleString('id-ID')}
+            </h4>
+            <div className="mt-3 flex items-center gap-1.5">
+                <button className="text-[9px] font-black text-white hover:text-amber-400 transition-colors uppercase tracking-widest border-b border-white/20">Top Up Sekarang &rarr;</button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* RECENT ACTIVITY PLACEHOLDER (Bisa dikembangkan nanti pakai Chart.js) */}
-      <Card className="min-h-[300px] flex flex-col items-center justify-center border-dashed bg-slate-50/50">
-        <p className="text-slate-400 text-sm font-medium">Grafik Pendaftaran & Konversi</p>
-        <p className="text-slate-400 text-xs mt-1">(Data visualisasi akan muncul di sini)</p>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Main Chart */}
+        <div className="lg:col-span-8 space-y-8">
+            <div className="bg-white p-8 lg:p-10 rounded-[2.5rem] border border-slate-50 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-center mb-10">
+                    <h3 className="font-heading font-black text-xs uppercase text-[#001a33] flex items-center gap-3">
+                        <ChartBar weight="bold" className="text-blue-600 text-xl" /> 
+                        Distribusi Peminat Berdasarkan Prodi
+                    </h3>
+                    <div className="flex gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">6 Bulan Terakhir</span>
+                    </div>
+                </div>
+                <div className="h-[250px] md:h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={mainChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} 
+                        />
+                        <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }}
+                        />
+                        <RechartsTooltip 
+                        cursor={{ fill: '#F8FAFC' }} 
+                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+                        />
+                        <Bar dataKey="pendaftar" fill="#094E8B" radius={[12, 12, 4, 4]} maxBarSize={50} />
+                    </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="bg-white p-8 lg:p-10 rounded-[2.5rem] border border-slate-50 shadow-sm">
+                <div className="flex justify-between items-center mb-10">
+                    <h3 className="font-heading font-black text-xs uppercase text-[#001a33] flex items-center gap-3">
+                        <TrendUp weight="bold" className="text-emerald-500 text-xl" /> 
+                        Tren Pertumbuhan Pendaftaran RPL
+                    </h3>
+                </div>
+                <div className="h-[200px] md:h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorPendaftar" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                                <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }} />
+                        <RechartsTooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 15px rgba(0,0,0,0.05)' }} />
+                        <Area 
+                          type="monotone" 
+                          dataKey="pendaftar" 
+                          stroke="#10B981" 
+                          strokeWidth={4} 
+                          fillOpacity={1} 
+                          fill="url(#colorPendaftar)" 
+                          dot={{ r: 4, fill: '#fff', stroke: '#10B981', strokeWidth: 2 }}
+                        />
+                    </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        </div>
+
+        {/* Sidebar Activity */}
+        <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-50 shadow-sm h-full flex flex-col">
+                <h4 className="font-black text-[#001a33] text-xs uppercase tracking-widest mb-8 flex items-center justify-between">
+                    Aktivitas Terbaru
+                    <span className="text-[10px] text-blue-600 font-bold hover:underline cursor-pointer">Lihat Semua</span>
+                </h4>
+                
+                <div className="space-y-8 relative">
+                    <div className="absolute left-[19px] top-2 bottom-8 w-0.5 bg-slate-100"></div>
+                    
+                    {recentActivity.map((act) => (
+                        <div key={act.id} className="relative flex gap-5 group cursor-pointer">
+                            <div className="w-10 h-10 rounded-xl bg-white border-2 border-slate-100 flex items-center justify-center relative z-10 shrink-0 group-hover:border-blue-500 transition-colors">
+                                <Clock weight="duotone" className="text-slate-400 group-hover:text-blue-500 transition-colors" size={20} />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-black text-[#001a33] truncate">{act.name}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight truncate mt-0.5">{act.prodi}</p>
+                                <div className="flex items-center gap-3 mt-3">
+                                    <span className="text-[9px] font-black text-blue-600/50 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-widest">{act.status}</span>
+                                    <span className="text-[9px] font-medium text-slate-300 italic">{act.time}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-auto pt-10">
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 relative group overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-100/50 rounded-full blur-xl -mr-6 -mt-6 group-hover:scale-125 transition-transform"></div>
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-8 h-8 bg-[#094E8B] rounded-lg flex items-center justify-center text-white"><CheckCircle weight="fill" /></div>
+                                <h5 className="text-[10px] font-black text-blue-900 uppercase tracking-widest leading-none">Status Autentikasi</h5>
+                            </div>
+                            <p className="text-[11px] font-medium text-slate-500 leading-relaxed">Sistem Anda terhubung ke API Gateway dalam mode sinkronisasi berkala.</p>
+                            <button className="mt-4 flex items-center gap-2 text-[10px] font-black text-[#094E8B] uppercase tracking-[0.15em] hover:gap-4 transition-all">
+                                Cek Konektivitas <ArrowRight weight="bold" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      </div>
     </div>
   );
 }

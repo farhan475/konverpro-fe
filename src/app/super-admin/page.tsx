@@ -2,211 +2,261 @@
 
 import { useEffect, useState } from "react";
 import axios from "@/lib/axios";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Buildings, 
+  Users, 
+  CurrencyCircleDollar, 
+  ListChecks, 
+  CircleNotch,
+  TrendUp,
+  MapPin,
+  Star,
+  CaretRight,
+  ChartLineUp,
+  Clock,
+  ArrowRight
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { Building2, Wallet, Loader2, DollarSign, Plus, Trash2 } from "lucide-react";
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
 
 export default function SuperAdminDashboard() {
-  const [campuses, setCampuses] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
-  // States Modal
-  const [topupAmount, setTopupAmount] = useState("");
-  const [selectedCampus, setSelectedCampus] = useState<any>(null);
-  const [openTopupDialog, setOpenTopupDialog] = useState(false);
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [campuses, setCampuses] = useState<any[]>([]);
 
-  // Form New Campus
-  const [newCampus, setNewCampus] = useState({
-    name: "", slug: "", billing_mode: "independent", student_fee: "50000", cost_per_check: "15000"
-  });
+  const [chartData] = useState([
+    { name: 'Jan', mitra: 3 },
+    { name: 'Feb', mitra: 8 },
+    { name: 'Mar', mitra: 14 },
+    { name: 'Apr', mitra: 22 },
+    { name: 'Mei', mitra: 28 },
+    { name: 'Jun', mitra: 35 },
+  ]);
 
-  const fetchCampuses = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const res = await axios.get('/super-admin/campuses');
-      setCampuses(res.data.data);
+      const [resCampuses, resTopups] = await Promise.all([
+        axios.get('/super-admin/campuses'),
+        axios.get('/super-admin/topups?status=pending').catch(() => ({ data: { data: [] } }))
+      ]);
+
+      const campusList = resCampuses.data.data || [];
+      const pendingTopups = resTopups.data.data || [];
+
+      let totalConversions = 0;
+      let revenue = 0;
+
+      campusList.forEach((c: any) => {
+        totalConversions += (c.conversions_count || 0);
+        revenue += (c.conversions_count || 0) * 150000;
+      });
+
+      setStats({
+        total_campus: campusList.length,
+        pending_topups: pendingTopups.length,
+        revenue: revenue,
+        total_conversions: totalConversions
+      });
+      setCampuses(campusList.slice(0, 5)); // Top 5 for performance heatmap
+
     } catch (error) {
-      toast.error("Gagal memuat data kampus");
+      console.error(error);
+      toast.error("Gagal memuat data dashboard.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCampuses();
+    fetchDashboardData();
   }, []);
 
-  const handleTopup = async () => {
-    if (!topupAmount || isNaN(Number(topupAmount))) return toast.error("Masukkan nominal yang valid");
-    try {
-      await axios.post(`/super-admin/campuses/${selectedCampus.id}/topup`, { amount: Number(topupAmount) });
-      toast.success("Top Up Berhasil!");
-      setOpenTopupDialog(false);
-      setTopupAmount("");
-      fetchCampuses();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal Top Up");
-    }
-  };
-
-  const handleCreateCampus = async () => {
-    try {
-      await axios.post('/super-admin/campuses', newCampus);
-      toast.success("Kampus berhasil didaftarkan!");
-      setOpenCreateDialog(false);
-      setNewCampus({ name: "", slug: "", billing_mode: "independent", student_fee: "50000", cost_per_check: "15000" });
-      fetchCampuses();
-    } catch (error: any) {
-        console.log(error);
-      toast.error(error.response?.data?.message || "Gagal membuat kampus");
-    }
-  };
-
-  const handleDeleteCampus = async (id: string) => {
-    if(!confirm("Yakin hapus kampus ini? Data terkait akan hilang.")) return;
-    try {
-        await axios.delete(`/super-admin/campuses/${id}`);
-        toast.success("Kampus dihapus");
-        fetchData(); // Refresh data
-    } catch (error) {
-        toast.error("Gagal menghapus kampus");
-    }
+  if (loading) {
+    return (
+      <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
+        <CircleNotch weight="bold" className="animate-spin text-[#094E8B] w-12 h-12" />
+        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Menganalisis Data Global...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center">
-        <div>
-            <h2 className="text-2xl font-bold text-slate-900">Pusat Kendali Kampus</h2>
-            <p className="text-slate-500">Kelola mitra perguruan tinggi dan saldo deposit mereka.</p>
+    <div className="space-y-8 lg:space-y-10 animate-fade-in-quick">
+      <header>
+        <h2 className="font-heading text-lg lg:text-xl font-black tracking-tight text-[#001a33] uppercase">
+            Global Analytics Control
+        </h2>
+        <p className="text-slate-400 text-xs lg:text-sm">
+            Ikhtisar performa ekosistem KonverPro secara real-time.
+        </p>
+      </header>
+
+      {/* STAT CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-100 transition"></div>
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Mitra Kampus</p>
+                <Buildings weight="duotone" className="text-2xl text-blue-500" />
+            </div>
+            <h3 className="text-4xl font-black text-[#001a33]">{stats?.total_campus || 0}</h3>
+            <div className="mt-4 flex items-center gap-2">
+                <TrendUp weight="bold" className="text-emerald-500" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter">+12% Bulan ini</span>
+            </div>
+          </div>
         </div>
         
-        {/* MODAL TAMBAH KAMPUS */}
-        <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
-            <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="w-4 h-4 mr-2" /> Tambah Mitra Baru
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader><DialogTitle>Registrasi Kampus Mitra</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500">Nama Kampus</label>
-                        <Input value={newCampus.name} onChange={e => setNewCampus({...newCampus, name: e.target.value})} placeholder="Universitas X" />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500">Slug / URL (Unik)</label>
-                        <Input value={newCampus.slug} onChange={e => setNewCampus({...newCampus, slug: e.target.value})} placeholder="univ-x" />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500">Model Pembayaran</label>
-                        <Select value={newCampus.billing_mode} onValueChange={(val) => setNewCampus({...newCampus, billing_mode: val})}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="independent">Mandiri (Mahasiswa Bayar)</SelectItem>
-                                <SelectItem value="subsidy">Subsidi (Kampus Bayar)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-bold text-slate-500">Biaya Mhs (Rp)</label>
-                            <Input type="number" value={newCampus.student_fee} onChange={e => setNewCampus({...newCampus, student_fee: e.target.value})} />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-500">Potongan Saldo (Rp)</label>
-                            <Input type="number" value={newCampus.cost_per_check} onChange={e => setNewCampus({...newCampus, cost_per_check: e.target.value})} />
-                        </div>
-                    </div>
-                    <Button onClick={handleCreateCampus} className="w-full bg-blue-600 mt-2">Simpan Kampus</Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden ring-2 ring-emerald-100 bg-emerald-50/10">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-200 transition"></div>
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+                <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Antrean Top Up</p>
+                <Clock weight="duotone" className="text-2xl text-emerald-500" />
+            </div>
+            <h3 className="text-4xl font-black text-emerald-600">{stats?.pending_topups || 0}</h3>
+            <div className="mt-4 flex items-center gap-2">
+                <span className="text-[10px] font-black text-emerald-600/50 uppercase tracking-widest">Butuh Konfirmasi</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-[#094E8B] p-8 rounded-[2rem] border border-blue-800 shadow-xl shadow-blue-900/20 hover:shadow-2xl transition-all group relative overflow-hidden col-span-1 lg:col-span-1">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-125 transition-transform duration-500"></div>
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div className="flex justify-between items-start mb-6 text-blue-200">
+                <p className="text-[10px] font-black uppercase tracking-widest">Global Revenue</p>
+                <CurrencyCircleDollar weight="duotone" className="text-3xl text-amber-400" />
+            </div>
+            <h3 className="text-2xl font-black text-white">Rp {(stats?.revenue || 0).toLocaleString('id-ID')}</h3>
+            <div className="mt-4">
+                <button className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">Laporan Detil &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-slate-100 transition"></div>
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-6">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Aktivitas Konversi</p>
+                <ListChecks weight="duotone" className="text-2xl text-slate-400" />
+            </div>
+            <h3 className="text-4xl font-black text-[#001a33]">{stats?.total_conversions || 0}</h3>
+            <div className="mt-4 flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Total SKS Diproses</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row justify-between items-center">
-          <CardTitle>Daftar Mitra Perguruan Tinggi</CardTitle>
-          <Badge className="bg-blue-100 text-blue-700">{campuses.length} Kampus</Badge>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-blue-600" /></div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama Kampus</TableHead>
-                  <TableHead>Mode Billing</TableHead>
-                  <TableHead className="text-right">Sisa Saldo</TableHead>
-                  <TableHead className="text-center">Total Konversi</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {campuses.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-bold">
-                        {c.name}
-                        <div className="text-[10px] text-slate-400 font-mono">/{c.slug}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={c.billing_mode === 'subsidy' ? 'default' : 'outline'} className={c.billing_mode === 'subsidy' ? 'bg-blue-600' : 'text-slate-500'}>
-                        {c.billing_mode === 'subsidy' ? 'Subsidi' : 'Mandiri'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-bold text-green-600">
-                      Rp {Number(c.balance).toLocaleString('id-ID')}
-                    </TableCell>
-                    <TableCell className="text-center">{c.conversions_count} Mhs</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {/* Tombol Top Up */}
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
-                            onClick={() => { setSelectedCampus(c); setOpenTopupDialog(true); }}
-                        >
-                            <Wallet className="w-4 h-4" /> Top Up
-                        </Button>
-                        
-                        {/* Tombol Hapus */}
-                        <Button size="icon" variant="ghost" className="text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteCampus(c.id)}>
-                            <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Growth Chart */}
+        <div className="lg:col-span-8 bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+            <div className="flex justify-between items-center mb-10">
+                <h4 className="text-xs font-black uppercase text-[#001a33] tracking-widest flex items-center gap-3">
+                    <ChartLineUp weight="bold" className="text-blue-600 text-xl" /> 
+                    Pertumbuhan Kampus Mitra
+                </h4>
+                <div className="flex gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase">Proyeksi</span>
+                    </div>
+                </div>
+            </div>
+            <div className="flex-1 min-h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="colorMitra" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#094E8B" stopOpacity={0.1}/>
+                            <stop offset="95%" stopColor="#094E8B" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} />
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+                        itemStyle={{ color: '#094E8B' }}
+                    />
+                    <Area 
+                        type="monotone" 
+                        dataKey="mitra" 
+                        stroke="#094E8B" 
+                        strokeWidth={4}
+                        fillOpacity={1}
+                        fill="url(#colorMitra)"
+                        dot={{ r: 5, fill: '#fff', strokeWidth: 3, stroke: '#094E8B' }}
+                        activeDot={{ r: 8, strokeWidth: 0, fill: '#FDD824 shadow-lg' }}
+                    />
+                </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
 
-      {/* MODAL TOPUP (DI LUAR LOOP) */}
-      <Dialog open={openTopupDialog} onOpenChange={setOpenTopupDialog}>
-        <DialogContent>
-            <DialogHeader><DialogTitle>Top Up Saldo - {selectedCampus?.name}</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-4">
-            <div>
-                <label className="text-xs font-bold text-slate-500 mb-1 block">Nominal Top Up (Rp)</label>
-                <Input type="number" placeholder="Contoh: 5000000" value={topupAmount} onChange={(e) => setTopupAmount(e.target.value)} />
+        {/* Performance Sidebar */}
+        <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm h-full flex flex-col">
+                <h4 className="text-xs font-black uppercase text-[#001a33] tracking-widest mb-10">Leaderboard Kampus</h4>
+                <div className="space-y-8 flex-1">
+                    {campuses.length === 0 ? (
+                        <div className="text-center py-20 text-slate-300 italic text-sm font-medium uppercase tracking-widest">No Active Data</div>
+                    ) : (
+                        campuses.map((campus, idx) => {
+                            const maxVal = campuses[0]?.conversions_count || 1;
+                            const currentVal = campus.conversions_count || 0;
+                            const widthPercent = Math.max(15, (currentVal / maxVal) * 100);
+
+                            return (
+                                <div key={campus.id} className="group cursor-pointer">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 font-black text-[10px] text-slate-400 group-hover:bg-blue-900 group-hover:text-white transition-colors">
+                                                0{idx + 1}
+                                            </div>
+                                            <span className="font-bold text-xs text-[#001a33] truncate pr-4">{campus.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <Star weight="fill" className="text-amber-400" size={12} />
+                                            <span className="font-black text-xs text-slate-700">{currentVal}</span>
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
+                                        <div 
+                                          className={`h-full rounded-full transition-all duration-1000 ${idx === 0 ? 'bg-blue-900' : 'bg-blue-400 opacity-60'}`} 
+                                          style={{ width: `${widthPercent}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                <div className="mt-10 pt-10 border-t border-slate-50">
+                    <button className="w-full py-4 bg-slate-50 text-[#094E8B] rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-blue-50 transition active:scale-95">
+                        Lihat Data Seluruh Institusi <ArrowRight weight="bold" />
+                    </button>
+                </div>
             </div>
-            <Button onClick={handleTopup} className="w-full bg-green-600 hover:bg-green-700">
-                <DollarSign className="w-4 h-4 mr-2" /> Konfirmasi Top Up
-            </Button>
-            </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+
+      </div>
     </div>
   );
 }

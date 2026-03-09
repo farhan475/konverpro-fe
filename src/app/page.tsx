@@ -2,402 +2,573 @@
 
 import { useEffect, useState } from "react";
 import axios from "@/lib/axios";
-import * as XLSX from "xlsx";
 import { 
-    UploadCloud, FileSpreadsheet, ArrowRight, Loader2, Search, 
-    Download, ListChecks, Building2, MapPin, Calculator, PlayCircle, Star, SlidersHorizontal
-} from "lucide-react";
+  UploadSimple, 
+  FileArrowUp, 
+  ArrowRight, 
+  CircleNotch, 
+  MagnifyingGlass, 
+  DownloadSimple, 
+  ListChecks, 
+  Buildings, 
+  MapPin, 
+  Star, 
+  SlidersHorizontal,
+  List, 
+  X,
+  CaretRight,
+  ShieldCheck,
+  Calculator,
+  PlayCircle,
+  WhatsappLogo,
+  Checks
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
+import { toast } from "sonner"; 
 import { generateConversionPDF } from "@/lib/generatePdf";
+import Link from "next/link";
 
-import Navbar from "@/components/landing/Navbar";
-import Footer from "@/components/landing/Footer";
-
-// --- FUNGSI AI MATCHING LOKAL ---
-const expandAbbr = (str: string) => {
-  let s = String(str || "").toLowerCase().trim().replace(/[^a-z0-9\s]/g, " ");
-  const mappings: any = { "peng": "pengantar", "tek": "teknologi", "sis": "sistem", "info": "informasi", "algo": "algoritma", "bhs": "bahasa", "ing": "inggris", "prog": "pemrograman", "dat": "data" };
-  return s.split(/\s+/).map(w => mappings[w] || w).join(" ");
-};
-
-const levenshtein = (a: string, b: string) => {
-  const matrix = [];
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
-      else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
-    }
-  }
-  return matrix[b.length][a.length];
-};
-
-const calculateSimilarity = (source: string, target: string) => {
-  let s = expandAbbr(source).replace(/[^a-z0-9]/g, '');
-  let t = expandAbbr(target).replace(/[^a-z0-9]/g, '');
-  if (s === t) return 1.0;
-  if (s.includes(t) || t.includes(s)) return 0.8;
-  const distance = levenshtein(s, t);
-  const maxLength = Math.max(s.length, t.length);
-  if (maxLength === 0) return 0;
-  return 1 - (distance / maxLength); 
-};
-
-export default function MarketplacePage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [transcript, setTranscript] = useState<any[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
-  // STATE BARU: Menyimpan data dinamis dari Backend
-  const [marketplaceData, setMarketplaceData] = useState<any[]>([]);
-  const [isFetchingData, setIsFetchingData] = useState(true);
-
-  // Modals State
-  const [activeItem, setActiveItem] = useState<any>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showClaimModal, setShowClaimModal] = useState(false);
+export default function LandingPage() {
   
-  // Claim Form State
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", originCampus: "" });
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [backendTrxId, setBackendTrxId] = useState<string | null>(null);
+  // State Form
+  const [file, setFile] = useState<File | null>(null);
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [originCampus, setOriginCampus] = useState("");
+  
+  // State Data
+  const [campuses, setCampuses] = useState<any[]>([]);
+  const [univId, setUnivId] = useState(""); 
+  const [prodiId, setProdiId] = useState(""); 
+  
+  // State UI
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingCampuses, setIsFetchingCampuses] = useState(true);
+  const [result, setResult] = useState<any>(null);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // MENGAMBIL DATA DARI BACKEND SAAT HALAMAN DIBUKA
+  // 1. Fetch Daftar Kampus
   useEffect(() => {
-    const fetchMarketplace = async () => {
+    const fetchCampuses = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/public/marketplace`);
-        setMarketplaceData(response.data.data);
+        const response = await axios.get('/public/campuses');
+        const campusData = response.data.data;
+        setCampuses(campusData);
+        
+        if (campusData.length > 0) {
+          setUnivId(campusData[0].id);
+          if (campusData[0].study_programs?.length > 0) {
+            setProdiId(campusData[0].study_programs[0].id);
+          }
+        }
       } catch (error) {
-        toast.error("Gagal memuat data kampus mitra dari server.");
+        toast.error("Gagal memuat daftar kampus mitra.");
       } finally {
-        setIsFetchingData(false);
+        setIsFetchingCampuses(false);
       }
     };
-    fetchMarketplace();
+    fetchCampuses();
   }, []);
 
-  // Download Template Excel
-  const downloadTemplate = () => {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([["NO", "KODE_MK", "NAMA_MATAKULIAH", "SKS", "NILAI"], [1, "COMP101", "Algoritma dan Pemrograman", 3, "A"]]);
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "Template_KonverPro.xlsx");
-  };
-
-  // Handle File Upload & Parsing (Frontend)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-    setFile(selectedFile);
-    
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        
-        let headerIdx = json.findIndex(r => JSON.stringify(r).toLowerCase().includes('nama_matakuliah'));
-        if(headerIdx === -1) headerIdx = 0; 
-
-        const parsedCourses = json.slice(headerIdx + 1).map(r => ({
-          name: r[2] || r[1], sks: parseInt(r[3] || 0), grade: String(r[4] || '').toUpperCase()
-        })).filter(c => c.name && c.sks > 0);
-        
-        setTranscript(parsedCourses);
-      } catch (err) {
-        toast.error("Format Excel tidak sesuai.");
-      }
-    };
-    reader.readAsArrayBuffer(selectedFile);
-  };
-
-  // Jalankan AI Matching ke SELURUH KAMPUS DARI DATABASE
-  const runSimulation = () => {
-    if (transcript.length === 0) return toast.error("Silakan upload file transkrip terlebih dahulu");
-    if (marketplaceData.length === 0) return toast.error("Belum ada data kampus mitra di sistem.");
-    
-    setIsProcessing(true);
-    
-    setTimeout(() => {
-      const generatedResults = marketplaceData.map(campus => {
-        let totalSKS = 0;
-        let matches: any[] = [];
-        let matchedSources = new Set();
-
-        campus.courses.forEach((target: any) => {
-          let bestMatch: any = null;
-          let bestScore = 0;
-          
-          transcript.forEach(source => {
-            if(matchedSources.has(source.name)) return;
-            const score = calculateSimilarity(source.name, target.name);
-            if (score > 0.6 && score > bestScore) { bestScore = score; bestMatch = source; }
-          });
-          
-          if (bestMatch && ['A','A-','B+','B'].includes(bestMatch.grade)) {
-            matches.push({ target, source: bestMatch, score: bestScore });
-            totalSKS += target.sks;
-            matchedSources.add(bestMatch.name);
-          }
-        });
-
-        const remainingSKS = Math.max(144 - totalSKS, 0);
-        const estSemesters = Math.ceil(remainingSKS / 20);
-
-        return { ...campus, totalSKS, remainingSKS, duration: estSemesters, matches };
-      });
-
-      // Hilangkan prodi yang SKS diakuinya 0 agar hasil lebih relevan
-      const filteredResults = generatedResults.filter(r => r.totalSKS > 0);
-
-      setResults(filteredResults.sort((a,b) => b.totalSKS - a.totalSKS));
-      setIsProcessing(false);
-      document.getElementById('results-header')?.scrollIntoView({ behavior: 'smooth' });
-    }, 1500);
-  };
-
-  // PENDAFTARAN REAL KE BACKEND (Saat klik tombol Kirim via WA/Daftar)
-  const handleRegisterToCampus = async () => {
-    if (!formData.name || !formData.email || !formData.phone) return toast.error("Lengkapi data diri!");
-    if (!file) return toast.error("File transkrip hilang.");
-
-    setIsRegistering(true);
-    const apiData = new FormData();
-    // Gunakan ID kampus dan prodi dari item yang dipilih (activeItem)
-    apiData.append("university_id", activeItem.id); 
-    apiData.append("study_program_id", activeItem.study_program_id);
-    apiData.append("name", formData.name);
-    apiData.append("email", formData.email);
-    apiData.append("file", file);
-
-    try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/conversions`, apiData, { headers: { "Content-Type": "multipart/form-data" } });
-        setBackendTrxId(response.data.data.id);
-        toast.success("Berhasil didaftarkan ke kampus!");
-    } catch (error) {
-        toast.error("Gagal mendaftar ke server. Pastikan Kampus adalah Mitra Aktif dan memiliki Saldo.");
-    } finally {
-        setIsRegistering(false);
+  // Update daftar Prodi
+  const handleCampusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedUnivId = e.target.value;
+    setUnivId(selectedUnivId);
+    const selectedCampus = campuses.find(c => c.id === selectedUnivId);
+    if (selectedCampus && selectedCampus.study_programs?.length > 0) {
+      setProdiId(selectedCampus.study_programs[0].id);
+    } else {
+      setProdiId("");
     }
   };
 
-  const handleCetakPDF = () => {
-      if(!activeItem) return;
-      const pdfData = {
-          trx_id: backendTrxId || "SIMULASI-001",
-          student: { name: formData.name, email: formData.email },
-          university: { name: activeItem.campus },
-          study_program: { name: activeItem.prodiName },
-          total_sks_target: 144,
-          total_sks_accepted: activeItem.totalSKS,
-          details: activeItem.matches.map((m:any) => ({
-              target_course: m.target, src_name: m.source.name, src_sks: m.source.sks, src_grade: m.source.grade, status: 'auto_accepted'
-          }))
-      };
-      generateConversionPDF(pdfData, false);
-  }
+  // Upload Logic
+  const handleUpload = async () => {
+    if (!file || !email || !name || !univId || !prodiId) {
+      toast.error("Data Belum Lengkap", { description: "Mohon lengkapi semua form." });
+      return;
+    }
+
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append("university_id", univId);
+    formData.append("study_program_id", prodiId);
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post('/conversions', formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const trxId = response.data.data.id;
+      toast.info("Sedang Memproses...", { description: "AI sedang mencocokkan transkrip Anda." });
+
+      setTimeout(async () => {
+        try {
+            const detailResponse = await axios.get(`/conversions/${trxId}`);
+            setResult(detailResponse.data.data);
+            setIsLoading(false);
+            toast.success("Selesai!", { description: "Hasil pencocokan ditampilkan." });
+            // Scroll to results
+            document.getElementById('results-header')?.scrollIntoView({ behavior: 'smooth' });
+        } catch (err: any) {
+            setIsLoading(false);
+            if (err.response && err.response.status === 402) {
+                toast.warning("Pembayaran Diperlukan");
+            } else {
+                toast.error("Gagal Mengambil Data");
+            }
+        }
+      }, 4000);
+
+    } catch (error: any) {
+      setIsLoading(false);
+      toast.error("Gagal Upload", { description: error.response?.data?.message || "Error sistem." });
+    }
+  };
+
+  const handleWhatsApp = () => {
+    const text = `Halo Admin KonverPro,\nSaya tertarik mendaftar.\n\nNama: ${name}\nAsal Kampus: ${originCampus || "-"}\n\nKampus Tujuan: ${result?.university?.name}\nProdi Tujuan: ${result?.study_program?.name}\nEstimasi SKS Diakui: ${result?.total_sks_accepted} SKS`;
+    window.open(`https://wa.me/6281234567890?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const activeStudyPrograms = campuses.find(c => c.id === univId)?.study_programs || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-600 flex flex-col">
-      <Navbar />
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-600 flex flex-col selection:bg-brand-100 selection:text-brand-900">
+      
+      {/* NAVBAR */}
+      <nav className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-[60]">
+        <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-10">
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+                <div className="w-11 h-11 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-brand-600/20 group-hover:scale-105 transition-transform">K</div>
+                <div className="flex flex-col justify-center">
+                    <span className="font-bold text-xl text-brand-900 tracking-tight leading-none">KonverPro</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">Campus Marketplace</span>
+                </div>
+            </div>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-8">
+                <Link href="/" className="text-sm font-bold text-brand-600">Beranda</Link>
+                <Link href="#kampus" className="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Mitra Kampus</Link>
+                <Link href="#prosedur" className="text-sm font-bold text-slate-500 hover:text-brand-600 transition-colors">Cara Kerja</Link>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-4">
+            <Link href="/login">
+                <Button variant="ghost" className="text-brand-600 font-black text-xs uppercase tracking-widest hover:bg-brand-50">Masuk</Button>
+            </Link>
+            <Link href="/login">
+                <Button className="bg-brand-600 hover:bg-brand-700 text-white font-black text-xs uppercase tracking-widest rounded-xl px-6 h-11 shadow-xl shadow-brand-600/10">Daftar Mitra</Button>
+            </Link>
+          </div>
+          {/* Mobile Toggle */}
+          <div className="md:hidden">
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-brand-900">
+                  {mobileMenuOpen ? <X size={24} weight="bold" /> : <List size={24} weight="bold" />}
+              </Button>
+          </div>
+        </div>
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+            <div className="md:hidden bg-white border-t border-slate-100 p-6 space-y-6 shadow-2xl absolute w-full animate-fade-in">
+                <div className="flex flex-col gap-4">
+                  <Link href="/" className="text-sm font-bold text-brand-600" onClick={() => setMobileMenuOpen(false)}>Beranda</Link>
+                  <Link href="#kampus" className="text-sm font-bold text-slate-500" onClick={() => setMobileMenuOpen(false)}>Mitra Kampus</Link>
+                  <Link href="#prosedur" className="text-sm font-bold text-slate-500" onClick={() => setMobileMenuOpen(false)}>Cara Kerja</Link>
+                </div>
+                <div className="pt-6 border-t border-slate-100 flex flex-col gap-3">
+                    <Link href="/login"><Button variant="outline" className="w-full h-12 font-bold">Masuk Portal</Button></Link>
+                    <Link href="/login"><Button className="w-full bg-brand-600 h-12 font-bold shadow-lg shadow-brand-600/20">Registrasi Mitra</Button></Link>
+                </div>
+            </div>
+        )}
+      </nav>
 
       {/* HERO SECTION */}
-      <section className="bg-brand-900 text-white relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 py-20 relative z-10 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-800/80 border border-brand-700 text-accent-500 text-xs font-bold uppercase tracking-wider mb-6">
-                  <Star className="w-4 h-4 fill-accent-500" /> Platform No. 1 Konversi SKS Indonesia
+      <section className="bg-brand-900 text-white relative overflow-hidden py-24 md:py-32">
+          {/* Background Image Effect */}
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80')] opacity-10 bg-cover bg-center mix-blend-overlay"></div>
+          
+          <div className="max-w-[1400px] mx-auto px-6 relative z-10 text-center">
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 text-accent-500 text-[10px] font-black uppercase tracking-[0.2em] mb-8 backdrop-blur-md animate-fade-in shadow-2xl">
+                  <Star weight="fill" className="w-4 h-4 text-accent-500" /> Platform Konversi RPL Nasional
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
-                  Transfer Kredit Kuliah <span className="text-accent-500">Lebih Cepat</span>
+              <h1 className="text-4xl md:text-7xl font-extrabold mb-6 leading-[1.1] tracking-tight animate-fade-in">
+                  Transfer Kredit Kuliah<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-500 to-amber-300">Cepat, Pasti & Transparan</span>
               </h1>
-              <p className="text-brand-100 text-base max-w-2xl mx-auto mb-8 opacity-90 font-light">
-                  Bandingkan peluang transfer kredit di puluhan universitas mitra. Hemat waktu dan biaya kuliah Anda sekarang.
+              <p className="text-brand-100/80 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-medium leading-relaxed animate-fade-in">
+                  Bandingkan peluang transfer kredit di puluhan universitas mitra unggulan. Hemat waktu dan biaya kuliah Anda sekarang dengan teknologi AI.
               </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+                  <Button 
+                    onClick={() => document.getElementById('simulation-area')?.scrollIntoView({behavior: 'smooth'})}
+                    className="h-14 px-10 bg-white text-brand-900 hover:bg-accent-500 hover:text-brand-900 transition-all font-black uppercase text-xs tracking-widest rounded-2xl shadow-2xl shadow-black/20 group"
+                  >
+                    <Calculator weight="bold" className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" /> Mulai Simulasi SKS
+                  </Button>
+                  <Button variant="ghost" className="h-14 px-8 text-white hover:bg-white/10 font-bold rounded-2xl flex items-center gap-2">
+                    <PlayCircle weight="bold" className="w-6 h-6 text-accent-500" /> Lihat Video Panduan
+                  </Button>
+              </div>
           </div>
       </section>
 
-      <main className="flex-1 py-10 px-4 sm:px-6 bg-slate-50">
-        <div className="max-w-[1400px] mx-auto space-y-8">
+      {/* MAIN APP AREA */}
+      <main id="simulation-area" className="flex-1 py-12 md:py-20 px-6 bg-slate-50">
+        <div className="max-w-[1400px] mx-auto grid lg:grid-cols-12 gap-8 items-start">
             
-            {/* UPLOAD PANEL (LAYOUT HORIZONTAL) */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                <h3 className="font-bold text-brand-900 text-lg flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 bg-brand-50 rounded-lg flex items-center justify-center text-brand-600"><UploadCloud className="w-4 h-4" /></div>
-                    Simulasi Konversi Massal
-                </h3>
-                
-                <div className="flex flex-col md:flex-row gap-4 items-stretch">
-                    <button onClick={downloadTemplate} className="w-full md:w-48 bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-4 rounded-xl border border-dashed border-slate-300 transition flex flex-col items-center justify-center gap-2 group shrink-0">
-                        <FileSpreadsheet className="w-8 h-8 text-slate-400 group-hover:text-green-600" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Download Template</span>
-                    </button>
-                    
-                    <label className={`relative flex-1 border border-dashed rounded-xl transition cursor-pointer flex items-center px-6 py-4 ${file ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-white hover:bg-slate-50'}`}>
-                        <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handleFileChange} />
-                        <div className="flex items-center gap-4 w-full">
-                            <div className="w-10 h-10 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center shrink-0 text-brand-600">
-                                <UploadCloud className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-slate-700">{file ? file.name : "Template_Transkrip_Mahasiswa.xlsx"}</p>
-                                <p className="text-xs text-slate-400">Format .xlsx atau .csv (Maks 5MB)</p>
-                            </div>
+            {/* SIDEBAR FILTER */}
+            <div className="lg:col-span-3 bg-white rounded-3xl shadow-card border border-slate-100 p-6 sticky top-28 z-10">
+                <div className="flex items-center justify-between mb-6 border-b border-slate-50 pb-4">
+                    <h4 className="font-black text-brand-900 text-[10px] uppercase tracking-[0.15em] flex items-center gap-3">
+                        <SlidersHorizontal weight="bold" className="text-lg text-brand-600"/> Filter Kampus
+                    </h4>
+                    <button className="text-[10px] text-brand-600 font-bold hover:underline opacity-50 hover:opacity-100">Reset</button>
+                </div>
+                <div className="space-y-6">
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-widest">Wilayah / Provinsi</label>
+                        <select className="w-full text-xs font-bold p-3.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-700 appearance-none bg-no-repeat bg-[right_12px_center]">
+                            <option>Semua Wilayah</option>
+                            <option>DKI Jakarta</option>
+                            <option>Jawa Barat</option>
+                            <option>Di Yogyakarta</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase tracking-widest">Jenis Perguruan Tinggi</label>
+                        <select className="w-full text-xs font-bold p-3.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-700">
+                            <option>Semua Jenis</option>
+                            <option>PTN - Negeri</option>
+                            <option>PTS - Swasta</option>
+                        </select>
+                    </div>
+                    <div className="pt-4">
+                        <div className="p-4 bg-brand-50 rounded-2xl border border-brand-100">
+                          <p className="text-[9px] font-black text-brand-600 uppercase mb-2">Info RPL</p>
+                          <p className="text-[11px] font-medium leading-relaxed text-brand-900/70">Sistem ini memfasilitasi jalur Rekognisi Pembelajaran Lampau (RPL) untuk transfer kredit formal.</p>
                         </div>
-                    </label>
-
-                    <Button onClick={runSimulation} disabled={isProcessing || !file || isFetchingData} className="w-full md:w-48 bg-brand-900 hover:bg-brand-800 text-white font-bold h-auto rounded-xl shadow-lg shrink-0 text-sm">
-                        {isProcessing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Search className="w-5 h-5 mr-2" />} 
-                        Hitung SKS
-                    </Button>
+                    </div>
                 </div>
             </div>
 
-            {/* AREA BAWAH (SIDEBAR + GRID) */}
-            <div className="grid lg:grid-cols-12 gap-6 items-start">
+            {/* MAIN CONTENT */}
+            <div className="lg:col-span-9 space-y-8">
                 
-                {/* SIDEBAR FILTER */}
-                <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-                    <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                        <h4 className="font-bold text-slate-800 text-xs flex items-center gap-2"><SlidersHorizontal className="w-4 h-4"/> FILTER DATA</h4>
-                    </div>
-                    <div className="space-y-4">
-                        <p className="text-xs text-slate-400 italic">Filter sedang dalam pengembangan.</p>
+                {/* UPLOAD PANEL */}
+                <div className="bg-white rounded-[2.5rem] shadow-card border border-slate-100 p-8 md:p-10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50/50 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+                    
+                    <div className="relative z-10">
+                      <h3 className="font-heading font-black text-brand-900 text-xl md:text-2xl flex items-center gap-4 mb-8">
+                          <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600 shadow-inner">
+                            <UploadSimple weight="bold" className="w-6 h-6" />
+                          </div>
+                          Kalkulator Simulasi Konversi
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                          {/* Nama */}
+                          <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Nama Lengkap</label>
+                              <Input 
+                                placeholder="Masukkan nama Anda..." 
+                                className="h-14 bg-slate-50 border-slate-100 rounded-2xl font-bold px-6 focus:ring-brand-500/10 focus:border-brand-500 transition-all shadow-sm" 
+                                value={name} 
+                                onChange={e=>setName(e.target.value)} 
+                              />
+                          </div>
+                          {/* Email */}
+                          <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Email Aktif</label>
+                              <Input 
+                                placeholder="email@example.com" 
+                                className="h-14 bg-slate-50 border-slate-100 rounded-2xl font-bold px-6 focus:ring-brand-500/10 focus:border-brand-500 transition-all shadow-sm" 
+                                value={email} 
+                                onChange={e=>setEmail(e.target.value)} 
+                              />
+                          </div>
+
+                          {/* Kampus Tujuan */}
+                          <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Institusi Tujuan</label>
+                              <select className="w-full h-14 px-6 rounded-2xl border border-slate-100 bg-slate-50 text-xs font-bold outline-none focus:ring-brand-500/10 focus:border-brand-500 shadow-sm" value={univId} onChange={handleCampusChange} disabled={isFetchingCampuses}>
+                                  {isFetchingCampuses ? <option>Memuat data...</option> : campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                              </select>
+                          </div>
+                          {/* Prodi Tujuan */}
+                          <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Program Studi Tujuan</label>
+                              <select className="w-full h-14 px-6 rounded-2xl border border-slate-100 bg-slate-50 text-xs font-bold outline-none focus:ring-brand-500/10 focus:border-brand-500 shadow-sm" value={prodiId} onChange={e => setProdiId(e.target.value)} disabled={activeStudyPrograms.length === 0}>
+                                  {activeStudyPrograms.length === 0 ? <option>Tidak ada prodi...</option> : activeStudyPrograms.map((p:any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                              </select>
+                          </div>
+                      </div>
+
+                      {/* File Upload Area */}
+                      <div className="mb-8">
+                        <label className={`relative group w-full min-h-[160px] border-2 border-dashed rounded-[2rem] cursor-pointer flex flex-col items-center justify-center p-8 transition-all duration-300 ${file ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/50 hover:border-brand-400 hover:bg-white'}`}>
+                            <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={e => {
+                                const selected = e.target.files?.[0] || null;
+                                setFile(selected);
+                                if(selected) toast.success("File diterima", { description: selected.name });
+                            }} />
+                            
+                            <div className="flex flex-col items-center text-center gap-3">
+                                <div className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center shadow-xl transition-transform group-hover:scale-110 ${file ? 'bg-emerald-500 text-white shadow-emerald-500/30' : 'bg-white text-brand-600 shadow-brand-900/5'}`}>
+                                    {file ? <Checks size={32} weight="bold" /> : <FileArrowUp size={32} weight="bold" />}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black text-slate-800">{file ? file.name : "Klik atau seret file transkrip SKS di sini"}</p>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hanya mendukung format .xlsx atau .xls (Maks 5MB)</p>
+                                </div>
+                            </div>
+                        </label>
+                        <div className="mt-4 flex justify-between items-center px-4">
+                          <button className="text-[11px] font-black text-brand-600 uppercase tracking-widest flex items-center gap-2 hover:underline">
+                            <DownloadSimple weight="bold" /> Download Template Excel
+                          </button>
+                          <p className="text-[10px] italic text-slate-400">*Gunakan template agar hasil mapping akurat 100%</p>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button 
+                        onClick={handleUpload} 
+                        disabled={isLoading || !file} 
+                        className="w-full h-16 bg-brand-900 hover:bg-brand-900 text-white font-black uppercase text-sm tracking-[0.2em] rounded-[1.5rem] shadow-2xl shadow-brand-900/30 group"
+                      >
+                          {isLoading ? (
+                            <>
+                              <CircleNotch className="w-6 h-6 animate-spin mr-3" weight="bold" />
+                              Memproses AI Matching...
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="w-6 h-6 mr-3 group-hover:rotate-6 transition-transform" weight="bold" /> 
+                              Jalankan Analisis Konversi
+                            </>
+                          )}
+                      </Button>
                     </div>
                 </div>
 
-                {/* AREA HASIL REKOMENDASI (CARD GRID) */}
-                <div className="lg:col-span-9" id="results-header">
-                    <div className="flex justify-between items-center mb-4 bg-white p-3 px-5 rounded-xl shadow-sm border border-slate-200">
-                        <h3 className="font-bold text-brand-900 text-sm flex items-center gap-2"><ListChecks className="w-4 h-4 text-brand-600"/> Hasil Rekomendasi</h3>
+                {/* HASIL REKOMENDASI */}
+                <div id="results-header" className="space-y-6 pt-4 scroll-mt-28">
+                    <div className="flex items-center gap-3 px-4">
+                        <ListChecks size={22} weight="bold" className="text-brand-600"/> 
+                        <h3 className="font-heading font-black text-brand-900 text-lg uppercase tracking-widest">Hasil Rekomendasi SKS</h3>
                     </div>
 
-                    {isFetchingData ? (
-                         <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400">
-                            <Loader2 className="animate-spin w-8 h-8 mx-auto mb-2 text-brand-600" />
-                            Memuat data kampus mitra dari server...
-                        </div>
-                    ) : results.length === 0 ? (
-                        <div className="bg-white rounded-xl border border-slate-200 p-16 text-center text-slate-400">
-                            Lakukan upload dan klik Hitung SKS untuk melihat rekomendasi kampus.
+                    {!result ? (
+                        <div className="bg-white rounded-[2.5rem] border border-slate-100 p-20 text-center shadow-card border-dashed">
+                            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <MagnifyingGlass size={40} weight="light" className="text-slate-300" />
+                            </div>
+                            <h4 className="font-black text-slate-900 text-lg mb-2">Belum ada data analisis</h4>
+                            <p className="text-xs font-bold text-slate-400 max-w-xs mx-auto uppercase tracking-widest leading-loose">Silakan upload transkrip di atas untuk melihat estimasi pengakuan mata kuliah.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {results.map((item, idx) => (
-                                <Card key={idx} className="border border-slate-200 shadow-sm relative overflow-hidden group hover:border-brand-300 transition">
-                                    {item.isOfficial && (
-                                        <div className="absolute top-0 right-0 bg-accent-500 text-brand-900 text-[9px] font-bold px-2 py-1 rounded-bl-lg flex items-center gap-1 z-10">
-                                            <Star className="w-3 h-3 fill-brand-900"/> Official Partner
-                                        </div>
-                                    )}
-                                    <CardContent className="p-5">
-                                        <div className="flex items-start gap-3 mb-4">
-                                            <div className="w-10 h-10 bg-brand-50 rounded-lg flex items-center justify-center text-brand-600 font-bold shrink-0">
-                                                {item.logoPath ? <img src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}/storage/${item.logoPath}`} className="w-full h-full object-contain p-1" /> : <Building2 className="w-5 h-5"/>}
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 text-sm leading-tight group-hover:text-brand-600 transition">{item.strata} {item.prodiName}</h4>
-                                                <p className="text-[10px] text-slate-500 uppercase">{item.campus}</p>
-                                                <div className="flex gap-1 mt-1 text-[9px]">
-                                                    <span className="bg-slate-100 text-slate-500 px-1 rounded"><MapPin className="w-2 h-2 inline"/> {item.province}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-3 gap-2 mb-4 border-t border-b border-slate-50 py-3">
-                                            <div className="text-center"><span className="block text-[9px] text-slate-400 font-bold uppercase mb-0.5">Diakui</span><span className="text-xl font-black text-green-600">{item.totalSKS}</span></div>
-                                            <div className="text-center"><span className="block text-[9px] text-slate-400 font-bold uppercase mb-0.5">Sisa</span><span className="text-xl font-black text-orange-500">{item.remainingSKS}</span></div>
-                                            <div className="text-center"><span className="block text-[9px] text-slate-400 font-bold uppercase mb-0.5">Estimasi</span><span className="text-xl font-black text-slate-700">{item.duration} <span className="text-[9px]">Sem</span></span></div>
-                                        </div>
+                        <Card className="bg-white rounded-[2.5rem] shadow-card-hover border border-brand-100 overflow-hidden animate-fade-in relative group transition-all">
+                            {/* BADGE OFFICIAL */}
+                            <div className="absolute top-0 right-0 bg-accent-500 text-brand-900 text-[10px] font-black px-6 py-2 rounded-bl-[1.5rem] z-10 flex items-center gap-2 shadow-lg shadow-accent-500/20">
+                                <Star weight="fill" className="w-3.5 h-3.5"/> Official Partner
+                            </div>
 
-                                        <div className="space-y-1 mb-4 text-[10px]">
-                                            <div className="flex justify-between"><span className="text-slate-400">Biaya Daftar Konversi:</span><span className="font-bold text-slate-600">Rp {Number(item.registrationFee).toLocaleString()}</span></div>
-                                            <div className="flex justify-between"><span className="text-slate-400">Biaya Kuliah (Est):</span><span className="font-bold text-brand-600">Rp {Number(item.tuition).toLocaleString()}</span></div>
+                            <CardContent className="p-8 md:p-10">
+                                <div className="flex flex-col md:flex-row items-start md:items-center gap-8 mb-10 pb-10 border-b border-slate-50">
+                                    <div className="w-20 h-20 bg-brand-50 rounded-3xl flex items-center justify-center text-brand-600 font-black shrink-0 text-3xl shadow-inner outline outline-4 outline-brand-50/50">
+                                        {result.university?.name?.charAt(0)}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-heading font-black text-brand-900 text-2xl md:text-3xl leading-tight mb-2 tracking-tight">{result.study_program?.name}</h4>
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                              <Buildings weight="bold" className="text-brand-600" />
+                                              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{result.university?.name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Badge variant="secondary" className="px-3 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border-none rounded-lg"><MapPin weight="fill" className="mr-1"/> Jakarta</Badge>
+                                                <Badge variant="secondary" className="px-3 py-1.5 text-[9px] font-black uppercase tracking-wider bg-brand-50 text-brand-600 border-none rounded-lg">Online Learning</Badge>
+                                            </div>
                                         </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+                                    <div className="text-center md:text-left group/stat">
+                                        <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 group-hover/stat:text-green-500 transition-colors">SKS Diakui</span>
+                                        <span className="text-4xl md:text-5xl font-black text-brand-900 group-hover/stat:scale-110 inline-block transition-transform">{result.total_sks_accepted} <span className="text-lg font-bold text-slate-300">/ 144</span></span>
+                                    </div>
+                                    <div className="text-center md:text-left">
+                                        <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Sisa Target</span>
+                                        <span className="text-4xl md:text-5xl font-black text-orange-500">{result.total_sks_target}</span>
+                                    </div>
+                                    <div className="text-center md:text-left">
+                                        <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Estimasi Waktu</span>
+                                        <span className="text-4xl md:text-5xl font-black text-slate-900">3.5 <span className="text-sm font-bold text-slate-300">Thn</span></span>
+                                    </div>
+                                    <div className="text-center md:text-left">
+                                        <span className="block text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Biaya Administrasi</span>
+                                        <span className="text-[10px] font-black text-slate-900 block mt-2">FREE*</span>
+                                        <span className="text-[8px] text-slate-400 uppercase">*Subsidi Kampus</span>
+                                    </div>
+                                </div>
 
-                                        <div className="flex gap-2">
-                                            <Button variant="outline" className="flex-1 text-xs h-9 border-slate-200" onClick={() => { setActiveItem(item); setShowDetailModal(true); }}>Detail SKS</Button>
-                                            <Button className="flex-1 text-xs h-9 bg-brand-900 hover:bg-brand-800 text-white" onClick={() => { setActiveItem(item); setShowClaimModal(true); }}>Daftar</Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
+                                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+                                    <div className="text-center md:text-left">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">UKT Per Semester Mulai Dari</p>
+                                        <h5 className="text-xl font-black text-brand-900">Rp 4.500.000 <span className="text-xs font-normal text-slate-400">/ All In</span></h5>
+                                    </div>
+                                    <div className="flex gap-4 w-full md:w-auto">
+                                        <Button variant="outline" className="flex-1 md:flex-none h-14 px-8 border-slate-200 hover:bg-white rounded-2xl font-bold text-xs" onClick={() => generateConversionPDF(result, false)}>
+                                            <DownloadSimple weight="bold" className="mr-2 text-lg" /> PDF
+                                        </Button>
+                                        <Button className="flex-1 md:flex-none h-14 px-10 bg-brand-900 hover:bg-black text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-brand-900/20" onClick={() => setIsClaimModalOpen(true)}>
+                                            Ambil Kursi Sekarang
+                                        </Button>
+                                    </div>
+                                </div>
+                                <p className="text-center text-[10px] font-medium text-slate-300 italic">*Hasil di atas adalah estimasi sistem berdasarkan data transkrip asal dan kurikulum tujuan yang terdaftar.</p>
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
+
             </div>
         </div>
       </main>
 
-      {/* MODAL DETAIL SKS */}
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Detail Pengakuan SKS - {activeItem?.prodiName}</DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto">
-                <Table>
-                    <TableHeader className="bg-slate-50">
-                        <TableRow>
-                            <TableHead className="text-xs">MK Tujuan</TableHead>
-                            <TableHead className="text-xs text-center">SKS</TableHead>
-                            <TableHead className="text-xs text-center">Status</TableHead>
-                            <TableHead className="text-xs">MK Asal Transkrip</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {activeItem?.matches?.map((m:any, i:number) => (
-                            <TableRow key={i}>
-                                <TableCell className="font-bold text-xs">{m.target.name}</TableCell>
-                                <TableCell className="text-center text-xs">{m.target.sks}</TableCell>
-                                <TableCell className="text-center"><Badge className="bg-green-100 text-green-700 border-none shadow-none text-[10px]">Diakui</Badge></TableCell>
-                                <TableCell className="text-xs text-slate-500">{m.source.name} ({m.source.grade})</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL DAFTAR (KIRIM KE BACKEND) */}
-      <Dialog open={showClaimModal} onOpenChange={setShowClaimModal}>
-        <DialogContent>
-            <DialogHeader><DialogTitle>Selesaikan Pendaftaran</DialogTitle></DialogHeader>
-            {!backendTrxId ? (
-                <div className="space-y-4 py-2">
-                    <div className="bg-brand-50 p-3 rounded-lg border border-brand-100 text-sm">
-                        Anda akan mendaftar ke <b>{activeItem?.campus}</b> prodi <b>{activeItem?.prodiName}</b> dengan potensi <b>{activeItem?.totalSKS} SKS diakui</b>.
-                    </div>
-                    <div><label className="text-xs font-bold text-slate-500">Nama Lengkap</label><Input value={formData.name} onChange={e=>setFormData({...formData, name:e.target.value})} /></div>
-                    <div><label className="text-xs font-bold text-slate-500">Email Aktif</label><Input type="email" value={formData.email} onChange={e=>setFormData({...formData, email:e.target.value})} /></div>
-                    <div><label className="text-xs font-bold text-slate-500">Nomor WhatsApp</label><Input value={formData.phone} onChange={e=>setFormData({...formData, phone:e.target.value})} /></div>
-                    <Button onClick={handleRegisterToCampus} disabled={isRegistering} className="w-full bg-brand-600 hover:bg-brand-700 text-white mt-2">
-                        {isRegistering ? <Loader2 className="animate-spin w-4 h-4" /> : "Kirim Data Pendaftaran"}
-                    </Button>
-                </div>
+      {/* MITRA KAMPUS SECTION */}
+      <section id="kampus" className="py-24 bg-white border-y border-slate-50">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+            <h2 className="text-3xl font-black text-brand-900 mb-2">Mitra Kampus Nasional</h2>
+            <p className="text-slate-500 font-medium mb-16">Jaringan perguruan tinggi digital terbaik yang mendukung jalur konversi RPL.</p>
+            {isFetchingCampuses ? (
+                <div className="flex justify-center"><CircleNotch className="animate-spin text-brand-400 w-10 h-10" weight="bold" /></div>
             ) : (
-                <div className="text-center py-6 space-y-4">
-                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2"><ListChecks className="w-8 h-8"/></div>
-                    <h3 className="font-bold text-xl text-slate-900">Pendaftaran Berhasil!</h3>
-                    <p className="text-sm text-slate-500">Data Anda telah dikirim ke Kampus Mitra. Silakan download PDF Estimasi di bawah.</p>
-                    <div className="grid grid-cols-2 gap-2 mt-4">
-                        <Button variant="outline" className="text-brand-600 border-brand-200" onClick={handleCetakPDF}><Download className="w-4 h-4 mr-2"/> Unduh PDF</Button>
-                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => window.location.reload()}><ArrowRight className="w-4 h-4 mr-2"/> Selesai</Button>
-                    </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+                    {campuses.map((c:any) => (
+                        <div key={c.id} className="flex flex-col items-center gap-4 group cursor-pointer transition-all hover:-translate-y-2">
+                            <div className="w-24 h-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-300 font-black text-4xl group-hover:bg-brand-50 group-hover:text-brand-600 transition-all border border-slate-50 group-hover:border-brand-100 shadow-sm group-hover:shadow-xl group-hover:shadow-brand-600/10">
+                                {c.name.charAt(0)}
+                            </div>
+                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-hover:text-brand-900 transition-colors leading-relaxed px-2">{c.name}</span>
+                        </div>
+                    ))}
                 </div>
             )}
+        </div>
+      </section>
+      
+      {/* PROSEDUR */}
+      <section id="prosedur" className="py-24 bg-slate-50 relative overflow-hidden">
+          <div className="max-w-6xl mx-auto px-6 relative z-10">
+              <div className="text-center mb-16">
+                  <h2 className="text-3xl font-black text-brand-900 mb-4">Integrasi Tanpa Hambatan</h2>
+                  <p className="text-slate-500 font-medium">Lalui 4 langkah mudah untuk memulai jenjang pendidikan baru Anda.</p>
+              </div>
+              <div className="grid md:grid-cols-4 gap-8">
+                 {[
+                   {num: "01", title: "Ambil Template", desc: "Download format Excel standar transkrip dari dashboard portal."},
+                   {num: "02", title: "Input Nilai", desc: "Isi data nilai mata kuliah Anda dari kampus lama secara lengkap."},
+                   {num: "03", title: "AI Mapping", desc: "Upload file & biarkan AI kami mencocokkan dengan kurikulum tujuan."},
+                   {num: "04", title: "Daftar", desc: "Dapatkan estimasi kelulusan & sampaikan ke admin kampus tujuan."}
+                 ].map((step, idx) => (
+                     <div key={idx} className="bg-white p-8 rounded-[2.5rem] shadow-card border border-slate-100 relative group transition-all hover:shadow-2xl">
+                         <span className="text-4xl font-black text-brand-50 group-hover:text-brand-100 transition-colors absolute top-6 right-8">{step.num}</span>
+                         <div className="w-14 h-14 bg-brand-50 text-brand-900 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-inner group-hover:rotate-6 transition-transform">{idx+1}</div>
+                         <h4 className="font-heading font-black text-brand-900 text-lg mb-3 tracking-tight">{step.title}</h4>
+                         <p className="text-[11px] font-medium leading-relaxed text-slate-400">{step.desc}</p>
+                     </div>
+                 ))}
+              </div>
+          </div>
+      </section>
+
+      <footer className="bg-brand-900 pt-20 pb-10 px-6">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 border-b border-white/5 pb-20 mb-10">
+          <div className="col-span-2">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-900 font-bold text-xl">K</div>
+                <h2 className="text-white font-black text-2xl tracking-tighter">KonverPro</h2>
+            </div>
+            <p className="text-brand-100/40 text-sm max-w-sm leading-relaxed">Platform marketplace konversi RPL terbaik di Indonesia. Memberikan transparansi dan kemudahan akses pendidikan tinggi bagi profesional dan mahasiswa transfer.</p>
+          </div>
+          <div>
+            <h5 className="text-white font-black text-xs uppercase tracking-widest mb-6">Navigasi</h5>
+            <ul className="space-y-4 text-sm font-medium text-brand-100/60">
+              <li><Link href="#" className="hover:text-white transition-colors underline-offset-4 hover:underline">Beranda</Link></li>
+              <li><Link href="#kampus" className="hover:text-white transition-colors underline-offset-4 hover:underline">Mitra Kampus</Link></li>
+              <li><Link href="#prosedur" className="hover:text-white transition-colors underline-offset-4 hover:underline">Cara Kerja SKS</Link></li>
+              <li><Link href="/login" className="hover:text-white transition-colors underline-offset-4 hover:underline">Login Admin</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h5 className="text-white font-black text-xs uppercase tracking-widest mb-6">Hubungi Kami</h5>
+            <ul className="space-y-4 text-sm font-medium text-brand-100/60">
+              <li className="flex items-center gap-2"><MapPin size={18} weight="bold" /> Jakarta Pusat, Indonesia</li>
+              <li className="flex items-center gap-2"><PlayCircle size={18} weight="bold" /> @konverpro.central</li>
+              <li>support@konverpro.id</li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-brand-100/20 text-[10px] font-black uppercase tracking-[0.2em]">&copy; {new Date().getFullYear()} KonverPro Systems Group. All Rights Reserved.</p>
+          <div className="flex gap-6 text-brand-100/20 text-[10px] font-black uppercase tracking-widest">
+            <Link href="#" className="hover:text-white">Privacy Policy</Link>
+            <Link href="#" className="hover:text-white">Terms of Service</Link>
+          </div>
+        </div>
+      </footer>
+
+      {/* MODAL CLAIM */}
+      <Dialog open={isClaimModalOpen} onOpenChange={setIsClaimModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+            <div className="p-10">
+                <DialogHeader className="mb-8">
+                    <DialogTitle className="text-2xl font-black text-brand-900 tracking-tight">Klaim Hasil & Konsultasi</DialogTitle>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Hampir Selesai! Hubungi Konselor Kami.</p>
+                </DialogHeader>
+                <div className="space-y-6">
+                    <div className="bg-brand-50 p-6 rounded-3xl border border-brand-100/50">
+                        <p className="text-[10px] font-black text-brand-600 mb-3 uppercase tracking-widest">Pendaftaran Tujuan</p>
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-brand-900 shadow-sm">{result?.university?.name?.charAt(0)}</div>
+                          <div>
+                            <p className="font-black text-brand-900 text-sm leading-none mb-1">{result?.university?.name}</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-tight">{result?.study_program?.name}</p>
+                          </div>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-[0.15em] ml-1">Nomor WhatsApp</label>
+                        <Input placeholder="081234567..." className="h-14 bg-slate-50 border-slate-100 rounded-2xl font-bold px-6" value={phone} onChange={e => setPhone(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 mb-1 block uppercase tracking-[0.15em] ml-1">Asal Institusi Sebelumnya</label>
+                        <Input placeholder="Contoh: Universitas Gadjah Mada" className="h-14 bg-slate-50 border-slate-100 rounded-2xl font-bold px-6" value={originCampus} onChange={e => setOriginCampus(e.target.value)} />
+                    </div>
+                    <Button 
+                      onClick={handleWhatsApp} 
+                      disabled={!phone} 
+                      className="w-full h-16 bg-green-600 hover:bg-green-700 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl shadow-green-600/20 flex items-center justify-center gap-3 transition-all"
+                    >
+                        <WhatsappLogo size={24} weight="fill" /> Chat via WhatsApp
+                    </Button>
+                    <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest opacity-50">Data Anda akan diproses untuk verifikasi pendaftaran mitra.</p>
+                </div>
+            </div>
         </DialogContent>
       </Dialog>
 

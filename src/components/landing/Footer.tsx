@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { MapPin, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export default function Footer() {
   return (
@@ -17,34 +15,34 @@ export default function Footer() {
             </p>
           </div>
           <div>
-            <h4 className="font-bold text-lg mb-4">Perusahaan</h4>
-            <ul className="flex flex-col items-start space-y-1">
-              <Button variant="link" className="text-slate-400 hover:text-white px-0 h-auto font-normal" asChild><Link href="#">Tentang Kami</Link></Button>
-              <Button variant="link" className="text-slate-400 hover:text-white px-0 h-auto font-normal" asChild><Link href="#">Karir</Link></Button>
-              <Button variant="link" className="text-slate-400 hover:text-white px-0 h-auto font-normal" asChild><Link href="#">Mitra Kampus</Link></Button>
+            <h4 className="font-bold text-lg mb-6">Perusahaan</h4>
+            <ul className="space-y-4 text-sm text-slate-400">
+              <li><a href="#" className="hover:text-white transition">Tentang Kami</a></li>
+              <li><a href="#" className="hover:text-white transition">Karir</a></li>
+              <li><a href="#" className="hover:text-white transition">Mitra Kampus</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-bold text-lg mb-4">Layanan</h4>
-            <ul className="flex flex-col items-start space-y-1">
-              <Button variant="link" className="text-slate-400 hover:text-white px-0 h-auto font-normal" asChild><Link href="#">Simulasi Konversi</Link></Button>
-              <Button variant="link" className="text-slate-400 hover:text-white px-0 h-auto font-normal" asChild><Link href="#">Cari Program Studi</Link></Button>
-              <Button variant="link" className="text-slate-400 hover:text-white px-0 h-auto font-normal" asChild><Link href="#">Beasiswa</Link></Button>
+            <h4 className="font-bold text-lg mb-6">Layanan</h4>
+            <ul className="space-y-4 text-sm text-slate-400">
+              <li><a href="#" className="hover:text-white transition">Simulasi Konversi</a></li>
+              <li><a href="#" className="hover:text-white transition">Cari Program Studi</a></li>
+              <li><a href="#" className="hover:text-white transition">Beasiswa</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-bold text-lg mb-6">Kontak</h4>
             <ul className="space-y-4 text-sm text-slate-400">
-              <li className="flex items-start gap-3"><MapPin className="text-brand-500 w-5 h-5 shrink-0" /><span>Menara 165, Jakarta Selatan</span></li>
-              <li className="flex items-center gap-3"><Mail className="text-brand-500 w-5 h-5 shrink-0" /><span>hello@konverpro.id</span></li>
+              <li className="flex items-start gap-3"><MapPin className="text-brand-500 text-lg mt-0.5" /><span>Menara 165, Jakarta Selatan</span></li>
+              <li className="flex items-center gap-3"><Mail className="text-brand-500 text-lg" /><span>hello@konverpro.id</span></li>
             </ul>
           </div>
         </div>
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-slate-500">&copy; {new Date().getFullYear()} PT Rajo Net Indonesia. All rights reserved.</p>
-          <div className="flex gap-4">
-            <Button variant="link" className="text-slate-500 hover:text-white px-0 text-xs">Privacy Policy</Button>
-            <Button variant="link" className="text-slate-500 hover:text-white px-0 text-xs">Terms of Service</Button>
+          <div className="flex gap-6 text-sm text-slate-500">
+            <a href="#" className="hover:text-white transition">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition">Terms of Service</a>
           </div>
         </div>
       </div>

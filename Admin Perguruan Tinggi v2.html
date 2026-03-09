@@ -1,0 +1,2590 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KonverPro - Enterprise Higher Education Portal</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- QRious for QR Code Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'], 
+                        heading: ['Poppins', 'sans-serif'] 
+                    },
+                    colors: {
+                        primary: { DEFAULT: '#094E8B', 50: '#e6eff7', 100: '#cce0f0', 500: '#094E8B', 600: '#073e6f', 900: '#031f37' },
+                        secondary: { DEFAULT: '#FDD824', 500: '#FDD824' },
+                        surface: '#F8FAFC',
+                    },
+                    keyframes: {
+                        slideIn: { '0%': { transform: 'translateX(100%)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
+                        slideOut: { '0%': { transform: 'translateX(0)', opacity: '1' }, '100%': { transform: 'translateX(100%)', opacity: '0' } },
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        scan: { 
+                            '0%': { left: '0%' }, 
+                            '50%': { left: '100%' }, 
+                            '100%': { left: '0%' } 
+                        }
+                    },
+                    animation: {
+                        slideIn: 'slideIn 0.3s ease-out forwards',
+                        slideOut: 'slideOut 0.3s ease-in forwards',
+                        fadeIn: 'fadeIn 0.5s ease-out forwards',
+                        scan: 'scan 2s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        body { -webkit-font-smoothing: antialiased; }
+        .active-menu { @apply text-secondary-500 border-b-2 border-secondary-500; }
+        .active-mobile-menu { @apply text-primary-900 font-black; }
+        .active-mobile-menu i { @apply text-secondary-500; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Desktop Sidebar Link */
+        .sidebar-link { @apply w-full flex items-center justify-between px-5 py-4 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer mb-2; color: #64748b; }
+        .sidebar-link i { @apply text-xl transition-colors duration-200; }
+        .sidebar-link:hover { background-color: #031f37; color: #FFFFFF !important; }
+        .sidebar-link.active { background-color: #031f37; color: #FFFFFF !important; box-shadow: 0 4px 15px rgba(3, 31, 55, 0.2); }
+        
+        /* Mobile Horizontal Scroll Settings */
+        .mobile-scroll-link { @apply flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold border border-slate-200 bg-white transition-all whitespace-nowrap; color: #64748b; }
+        .mobile-scroll-link.active { @apply bg-primary-900 text-white border-primary-900 shadow-lg; }
+
+        .admin-table th { @apply px-6 py-4 text-left text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-white border-b border-slate-100; }
+        .admin-table td { @apply px-6 py-4 text-sm border-b border-slate-50 align-middle text-slate-700; }
+        .action-flex { display: flex; gap: 8px; justify-content: center; align-items: center; }
+        .stat-card { @apply bg-white p-6 rounded-xl border border-slate-100 transition-all hover:shadow-md; }
+        .locked-blur { filter: blur(4px); user-select: none; opacity: 0.5; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media print {
+            body * { visibility: hidden; }
+            #ba-modal, #ba-modal * { visibility: visible; }
+            #ba-modal { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; padding: 0; margin: 0; z-index: 9999; }
+            #ba-print-area { width: 100%; border: none !important; box-shadow: none !important; }
+            .no-print { display: none !important; }
+        }
+        .animate-page { animation: fadeIn 0.3s ease-in-out; }
+        #toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+        
+        /* Signature Canvas Style */
+        canvas#sig-canvas { cursor: crosshair; }
+    </style>
+</head>
+<body class="font-sans text-slate-600 bg-surface flex flex-col min-h-screen overflow-x-hidden pb-20 lg:pb-0">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- PAGE: LOGIN -->
+    <div id="page-login" class="fixed inset-0 z-[100] bg-surface flex items-center justify-center p-6 animate-page">
+        <div class="bg-white w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-3xl shadow-2xl overflow-hidden min-h-[550px] border border-slate-100">
+            <div class="bg-primary-900 p-12 text-white flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-secondary-500 rounded-full blur-3xl opacity-20 -mr-20 -mt-20"></div>
+                <div class="absolute bottom-0 left-0 w-40 h-40 bg-blue-400 rounded-full blur-3xl opacity-20 -ml-10 -mb-10"></div>
+                <div class="relative z-10">
+                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 text-primary-900 shadow-lg">
+                        <i class="ph-bold ph-buildings text-2xl"></i>
+                    </div>
+                    <h1 class="font-heading text-4xl font-black uppercase tracking-tight mb-2">KonverPro</h1>
+                    <p class="text-primary-200 text-sm font-medium tracking-wide uppercase">Higher Education Portal</p>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-sm opacity-80 leading-relaxed font-medium">"Platform otomasi konversi kredit dan manajemen penerimaan mahasiswa pindahan tercanggih untuk Perguruan Tinggi Modern."</p>
+                    <div class="mt-8 flex gap-2">
+                        <div class="w-2 h-2 rounded-full bg-secondary-500"></div><div class="w-2 h-2 rounded-full bg-white/20"></div><div class="w-2 h-2 rounded-full bg-white/20"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-12 flex flex-col justify-center bg-white relative">
+                <h2 class="text-2xl font-heading font-bold text-primary-900 mb-2">Selamat Datang</h2>
+                <p class="text-sm text-slate-400 mb-8 font-medium">Silakan masuk ke akun administrator Anda.</p>
+                <form onsubmit="handleLogin(event)" class="space-y-6">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Email Kampus</label>
+                        <div class="relative group">
+                            <input type="email" id="login-email" value="admin@unsia.ac.id" required class="w-full px-5 py-4 pl-12 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition">
+                            <i class="ph-bold ph-envelope absolute left-4 top-4 text-slate-400 text-lg group-focus-within:text-primary-500 transition-colors"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Kata Sandi</label>
+                        <div class="relative group">
+                            <input type="password" id="login-password" value="password" required class="w-full px-5 py-4 pl-12 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition">
+                            <i class="ph-bold ph-lock-key absolute left-4 top-4 text-slate-400 text-lg group-focus-within:text-primary-500 transition-colors"></i>
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-login" class="w-full py-4 bg-primary-900 text-white rounded-xl font-black text-sm uppercase shadow-lg hover:bg-primary-800 transition-all flex justify-center items-center gap-2">
+                        <span>Masuk Dashboard</span><i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                </form>
+                <div class="mt-8 text-center border-t border-slate-50 pt-6">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">&copy; 2025 KonverPro Systems</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP LAYOUT -->
+    <div id="app-layout" class="hidden flex flex-col min-h-screen">
+        
+        <!-- Header (Desktop & Mobile Optimized) -->
+        <nav class="fixed w-full z-50 bg-primary-900 text-white shadow-lg no-print transition-all duration-300">
+            <div class="w-full px-4 py-3 lg:px-6 lg:py-4 flex justify-between items-center gap-4">
+                <!-- Brand / Logo -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="switchPage('dashboard')">
+                    <div class="bg-white p-1 rounded-lg w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center overflow-hidden shrink-0">
+                        <i id="default-logo-icon" class="ph-bold ph-buildings text-primary-900 text-lg lg:text-xl"></i>
+                        <img id="custom-logo-nav" src="" class="hidden w-full h-full object-contain">
+                    </div>
+                    <div class="border-l border-white/20 pl-3">
+                        <h1 id="brand-name-nav" class="font-heading font-medium text-base lg:text-lg leading-none uppercase tracking-tighter text-white truncate max-w-[150px] lg:max-w-none">KonverPro</h1>
+                        <span class="text-[8px] lg:text-[9px] uppercase tracking-[0.2em] text-primary-200 block mt-0.5 lg:mt-1 font-medium">Higher Ed Admin</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation (Hidden on Mobile) -->
+                <div class="hidden lg:flex items-center gap-6 overflow-x-auto no-scrollbar py-2 text-white font-bold text-xs uppercase tracking-wide">
+                    <button onclick="switchPage('dashboard')" id="nav-dashboard" class="transition-colors duration-200 hover:text-secondary-500 border-b-2 border-transparent active-menu px-1">Dashboard</button>
+                    <button onclick="switchPage('konversi')" id="nav-konversi" class="transition-colors duration-200 hover:text-secondary-500 border-b-2 border-transparent px-1 whitespace-nowrap">Input Konversi</button>
+                    <button onclick="switchPage('hasil')" id="nav-hasil" class="transition-colors duration-200 hover:text-secondary-500 border-b-2 border-transparent px-1 whitespace-nowrap">Hasil Konversi</button>
+                    <button onclick="switchPage('laporan')" id="nav-laporan" class="transition-colors duration-200 hover:text-secondary-500 border-b-2 border-transparent px-1 whitespace-nowrap">Laporan</button>
+                    <button onclick="switchPage('pengaturan')" id="nav-pengaturan" class="transition-colors duration-200 hover:text-secondary-500 border-b-2 border-transparent px-1">Pengaturan</button>
+                </div>
+
+                <!-- User Actions -->
+                <div class="flex items-center gap-2 lg:gap-4">
+                    <div class="bg-white/10 pl-3 pr-1.5 py-1 lg:pl-5 lg:pr-2 lg:py-1.5 rounded-xl flex items-center gap-2 lg:gap-4 border border-white/10 cursor-pointer hover:bg-white/20 transition" onclick="openTopUpModal()">
+                        <div class="text-right">
+                            <p class="text-[8px] uppercase font-black text-primary-200 opacity-60 leading-none mb-0.5 lg:mb-1">Saldo</p>
+                            <p class="text-xs lg:text-sm font-bold text-white group-hover:text-secondary-500 transition-colors" id="display-balance">Rp 0</p>
+                        </div>
+                        <div class="w-7 h-7 lg:w-9 lg:h-9 bg-secondary-500 text-primary-900 rounded-lg flex items-center justify-center shadow-lg text-xs lg:text-sm">
+                            <i class="ph-bold ph-plus"></i>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" class="w-8 h-8 lg:w-9 lg:h-9 rounded-lg bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition shadow-lg" title="Keluar"><i class="ph-bold ph-sign-out text-lg"></i></button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile Bottom Navigation (Superapp Style) -->
+        <div id="mobile-bottom-nav" class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-100 z-[60] flex justify-between items-end px-6 pb-4 pt-2 lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] no-print pb-safe">
+            <button onclick="switchPage('dashboard')" id="mob-nav-dashboard" class="flex-1 flex flex-col items-center gap-1 text-slate-400 hover:text-primary-900 transition active-mobile-menu">
+                <i class="ph-bold ph-squares-four text-2xl mb-0.5"></i>
+                <span class="text-[9px] font-bold tracking-wide">Home</span>
+            </button>
+            <button onclick="switchPage('konversi')" id="mob-nav-konversi" class="flex-1 flex flex-col items-center gap-1 text-slate-400 hover:text-primary-900 transition">
+                <div class="w-12 h-12 bg-primary-900 text-white rounded-full flex items-center justify-center shadow-lg shadow-primary-900/40 -mt-6 border-4 border-surface transform active:scale-95 transition-transform">
+                    <i class="ph-bold ph-scan text-2xl"></i>
+                </div>
+                <span class="text-[9px] font-bold tracking-wide mt-1">Scan</span>
+            </button>
+            <button onclick="switchPage('hasil')" id="mob-nav-hasil" class="flex-1 flex flex-col items-center gap-1 text-slate-400 hover:text-primary-900 transition">
+                <i class="ph-bold ph-list-checks text-2xl mb-0.5"></i>
+                <span class="text-[9px] font-bold tracking-wide">Hasil</span>
+            </button>
+            <button onclick="switchPage('pengaturan')" id="mob-nav-pengaturan" class="flex-1 flex flex-col items-center gap-1 text-slate-400 hover:text-primary-900 transition">
+                <i class="ph-bold ph-gear text-2xl mb-0.5"></i>
+                <span class="text-[9px] font-bold tracking-wide">Akun</span>
+            </button>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 pt-24 lg:pt-32 px-4 lg:px-6 w-full max-w-[1500px] mx-auto pb-8 lg:pb-6">
+            
+            <!-- DASHBOARD PAGE -->
+            <div id="page-dashboard" class="space-y-6 lg:space-y-10 animate-page">
+                <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                    <div>
+                        <h2 class="font-heading text-lg lg:text-xl font-semibold tracking-tight text-primary-900 uppercase">Dashboard Analytics</h2>
+                        <p class="text-slate-400 text-xs lg:text-sm">Pemantauan validasi SKS dan pendaftaran institusi.</p>
+                    </div>
+                    <button onclick="simulateIncomingLead()" class="w-full md:w-auto bg-secondary-500 text-primary-900 px-6 py-3 rounded-xl text-xs font-black shadow-lg hover:brightness-95 transition flex items-center justify-center gap-2">
+                        <i class="ph-bold ph-user-plus"></i> Simulasi Pendaftar
+                    </button>
+                </header>
+                
+                <!-- Stat Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+                    <div class="stat-card flex flex-col justify-between h-28 lg:h-32 p-4 lg:p-6">
+                        <p class="text-[8px] lg:text-[10px] font-bold uppercase text-slate-400">Total Konversi</p>
+                        <h4 class="text-2xl lg:text-4xl font-black text-primary-900" id="stat-total-conv">0</h4>
+                        <span class="text-[8px] lg:text-[9px] font-bold text-blue-500 uppercase">Terverifikasi</span>
+                    </div>
+                    <div class="stat-card flex flex-col justify-between h-28 lg:h-32 p-4 lg:p-6">
+                        <p class="text-[8px] lg:text-[10px] font-bold uppercase text-slate-400">Prodi Aktif</p>
+                        <h4 class="text-2xl lg:text-4xl font-black text-primary-900" id="stat-prodi">0</h4>
+                        <span class="text-[8px] lg:text-[9px] font-bold text-slate-400 uppercase">Database</span>
+                    </div>
+                    <div class="stat-card flex flex-col justify-between h-28 lg:h-32 p-4 lg:p-6">
+                        <p class="text-[8px] lg:text-[10px] font-bold uppercase text-slate-400">Menunggu Acc</p>
+                        <h4 class="text-2xl lg:text-4xl font-black text-orange-500" id="stat-pending">0</h4>
+                        <span class="text-[8px] lg:text-[9px] font-bold text-orange-400 uppercase">Approval Kaprodi</span>
+                    </div>
+                    <div class="stat-card flex flex-col justify-between h-28 lg:h-32 p-4 lg:p-6">
+                        <p class="text-[8px] lg:text-[10px] font-bold uppercase text-slate-400">Estimasi Tagihan</p>
+                        <h4 class="text-lg lg:text-2xl font-black text-red-600 truncate" id="stat-bill">Rp 0</h4>
+                        <span class="text-[8px] lg:text-[9px] font-bold text-red-400 uppercase">Outstanding</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                    <div class="lg:col-span-3 bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-xs uppercase mb-6 lg:mb-8 text-primary-900 flex items-center gap-2"><i class="ph-bold ph-chart-bar text-primary-600"></i> Distribusi Pendaftar per Prodi</h3>
+                        <div class="h-[200px] lg:h-[300px] w-full relative"><canvas id="chart-main"></canvas></div>
+                    </div>
+                    <div class="lg:col-span-3 bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-xs uppercase mb-6 lg:mb-8 text-primary-900 flex items-center gap-2"><i class="ph-bold ph-trend-up text-green-500"></i> Tren Pendaftaran</h3>
+                        <div class="h-[200px] lg:h-[250px] w-full relative"><canvas id="chart-trend"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AKADEMIK SETTINGS PAGE -->
+            <div id="page-akad-settings" class="hidden space-y-6 lg:space-y-8 animate-page">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 text-primary-900">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2 text-xs text-slate-400 font-bold uppercase tracking-widest">
+                            <span class="cursor-pointer hover:text-primary-900" onclick="switchPage('pengaturan')">Pengaturan</span><i class="ph-bold ph-caret-right"></i>
+                            <span class="cursor-pointer hover:text-primary-900" onclick="switchPage('pengaturan'); switchSettingsTab('prodi')">Prodi</span><i class="ph-bold ph-caret-right"></i>
+                            <span class="text-primary-600">Akademik</span>
+                        </div>
+                        <h2 class="font-heading text-lg lg:text-xl font-semibold uppercase tracking-tight" id="settings-prodi-title">Nama Prodi</h2>
+                        <p class="text-slate-400 text-xs lg:text-sm">Konfigurasi aturan konversi & validasi.</p>
+                    </div>
+                    <button onclick="saveAkadSettings()" id="btn-save-akad" class="w-full lg:w-auto bg-primary-900 text-white px-8 py-3 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-primary-700 transition flex justify-center items-center gap-2"><i class="ph-bold ph-floppy-disk"></i> Simpan Pengaturan</button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                    <div class="lg:col-span-2 space-y-6 lg:space-y-8">
+                        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm">
+                            <h3 class="text-sm font-black uppercase text-primary-900 mb-6 flex items-center gap-2 border-b border-slate-50 pb-4"><i class="ph-bold ph-student text-lg text-primary-600"></i> Syarat & Asal Mahasiswa</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Minimal Akreditasi Asal</label>
+                                    <select id="set-min-accreditation" class="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition">
+                                        <option value="Unggul">Unggul</option><option value="Baik Sekali">Baik Sekali</option><option value="Baik">Baik</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="Tanpa Akreditasi">Tanpa Akreditasi</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Usia Ijazah Maksimal (Tahun)</label>
+                                    <input type="number" id="set-max-year" class="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition text-center" placeholder="Contoh: 7">
+                                </div>
+                            </div>
+                            <div class="space-y-2 mb-6">
+                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Status Asal Mahasiswa</label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl max-h-48 overflow-y-auto custom-scrollbar" id="origin-type-container"></div>
+                            </div>
+                            <div class="space-y-2 pt-6 border-t border-slate-50">
+                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Format Nomor Surat Berita Acara</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="set-letter-format" class="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition font-mono text-sm" placeholder="BA/{YEAR}/{NO}/{PRODI}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Parameter Nilai -->
+                        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm">
+                            <h3 class="text-sm font-black uppercase text-primary-900 mb-6 flex items-center gap-2 border-b border-slate-50 pb-4"><i class="ph-bold ph-scales text-lg text-orange-500"></i> Parameter Nilai & SKS</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Max Konversi (%)</label>
+                                    <div class="relative"><input type="number" id="set-max-sks-percent" class="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="70"><span class="absolute right-4 top-4 text-slate-400 font-bold">%</span></div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">Nilai MK Minimal</label>
+                                    <select id="set-min-grade" class="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition"><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B (Standar)</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option></select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider">IPK Minimal</label>
+                                    <input type="number" id="set-min-gpa" step="0.01" class="w-full p-4 bg-slate-50 border-none rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none transition" placeholder="2.75">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MK Wajib Block -->
+                        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm overflow-visible">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-slate-50 pb-4 gap-2">
+                                <h3 class="text-sm font-black uppercase text-primary-900 flex items-center gap-2"><i class="ph-bold ph-lock-key text-lg text-red-500"></i> MK Wajib (Kunci)</h3>
+                                <div class="flex gap-2 w-full md:w-auto">
+                                    <button onclick="importWajibFromCurriculum()" class="flex-1 md:flex-none px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-[9px] font-black uppercase hover:bg-green-100 shadow-sm transition border border-green-200 flex items-center justify-center gap-1">
+                                        <i class="ph-bold ph-microsoft-excel-logo"></i> Tarik dari Excel
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="relative w-full">
+                                <div id="tag-input-wrapper" class="w-full min-h-[60px] bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-wrap gap-2 items-center focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-all cursor-text" onclick="document.getElementById('tag-input-field').focus()">
+                                    <input type="text" id="tag-input-field" class="bg-transparent border-none outline-none text-sm font-bold text-primary-900 placeholder:font-normal placeholder:text-slate-400 flex-1 min-w-[150px] h-8" placeholder="Ketik nama mata kuliah..." autocomplete="off">
+                                </div>
+                                <div id="tag-suggestions" class="absolute left-0 top-full mt-2 w-full bg-white border border-slate-100 shadow-xl rounded-xl z-20 hidden max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1"></div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-2 italic">* Mata kuliah ini akan otomatis terkunci di halaman konversi.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-8">
+                        <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm h-full flex flex-col">
+                            <div class="flex justify-between items-center mb-6 border-b border-slate-50 pb-4">
+                                <h3 class="text-sm font-black uppercase text-primary-900 flex items-center gap-2"><i class="ph-bold ph-list-numbers text-lg text-blue-500"></i> Distribusi SKS</h3>
+                                <button onclick="addSksRowNew()" class="px-3 py-1.5 bg-primary-900 text-white rounded-lg text-[9px] font-black uppercase hover:bg-primary-700 shadow-sm transition">+ Tambah</button>
+                            </div>
+                            <div class="mb-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <p class="text-[10px] font-bold text-blue-600 mb-2 uppercase">Isi Otomatis SKS Lanjutan</p>
+                                <div class="flex gap-2 mb-2">
+                                    <div class="flex-1"><input type="number" id="auto-sks-start" placeholder="Mulai Sem" class="w-full p-2 text-xs font-bold rounded-lg border-none outline-none text-center"></div>
+                                    <div class="flex-1"><input type="number" id="auto-sks-val" placeholder="Max SKS" class="w-full p-2 text-xs font-bold rounded-lg border-none outline-none text-center"></div>
+                                </div>
+                                <button onclick="applyAutoSks()" class="w-full py-2 bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase hover:bg-blue-600 transition">Terapkan Otomatis</button>
+                            </div>
+                            <div id="sks-list-container-new" class="space-y-3 flex-1 overflow-y-auto max-h-[300px] lg:max-h-[500px] custom-scrollbar pr-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KONVERSI INPUT PAGE -->
+            <div id="page-konversi" class="hidden space-y-6 lg:space-y-8 animate-page">
+                <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                    
+                    <!-- LEFT COLUMN -->
+                    <div class="flex-1 min-w-0 flex flex-col gap-6 lg:gap-8">
+                        
+                        <!-- Card 1: Upload Transkrip -->
+                        <div class="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-slate-100 relative">
+                            <h3 class="font-heading font-bold text-primary-900 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <i class="ph-duotone ph-file-arrow-up text-xl"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-lg">Upload Transkrip</span>
+                                    <span class="block text-xs font-normal text-slate-400 mt-0.5">Unggah file transkrip nilai (.xlsx)</span>
+                                </div>
+                            </h3>
+
+                            <div class="mb-6">
+                                <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-2 block">Program Studi Tujuan</label>
+                                <div class="relative">
+                                    <select id="prodi-select-konversi" class="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-primary-900 focus:ring-2 focus:ring-primary-100 outline-none cursor-pointer appearance-none transition"></select>
+                                    <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <!-- State 1: Input Row (Responsive Flex) -->
+                                <div id="konversi-input-container" class="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-2 bg-white border border-slate-200 rounded-xl shadow-sm transition-all hover:border-primary-200">
+                                    
+                                    <button onclick="downloadTranscriptTemplate()" class="shrink-0 w-full md:w-12 h-12 flex items-center justify-center bg-slate-50 rounded-lg text-blue-600 hover:bg-blue-50 transition tooltip-trigger" title="Download Template">
+                                        <div class="flex items-center gap-2 md:block">
+                                            <i class="ph-bold ph-file-xls text-2xl"></i>
+                                            <span class="md:hidden text-xs font-bold">Unduh Template</span>
+                                        </div>
+                                    </button>
+                                    
+                                    <div class="flex-1 relative group cursor-pointer" onclick="document.getElementById('file-upload-konversi').click()">
+                                        <div class="absolute inset-0 bg-slate-50 rounded-lg border border-slate-100 group-hover:bg-slate-100 transition"></div>
+                                        <div class="relative px-4 py-3 flex items-center justify-between">
+                                            <span id="file-display-name" class="text-sm font-medium text-slate-500 truncate">Pilih file Excel (.xlsx)...</span>
+                                            <i class="ph-bold ph-upload-simple text-slate-400"></i>
+                                        </div>
+                                        <input type="file" id="file-upload-konversi" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelection(this.files[0])">
+                                    </div>
+                                    
+                                    <button onclick="triggerScan()" class="shrink-0 px-8 py-3 bg-primary-900 text-white font-bold text-sm rounded-lg hover:bg-primary-700 transition shadow-md flex items-center justify-center gap-2">
+                                        <i class="ph-bold ph-magic-wand"></i> Proses
+                                    </button>
+                                </div>
+
+                                <!-- State 2: Loading Row -->
+                                <div id="konversi-loading-container" class="hidden items-center justify-center gap-4 p-3 bg-slate-50 border border-slate-200 rounded-xl shadow-inner h-[74px] relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-white/50 z-10"></div>
+                                    <div class="absolute top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent z-0 animate-[scan_1.5s_linear_infinite]"></div>
+                                    <div class="relative z-20 flex items-center gap-3">
+                                        <i class="ph-bold ph-spinner animate-spin text-primary-600 text-xl"></i>
+                                        <span class="text-sm font-bold text-primary-900">Menganalisis...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Hasil Pemetaan -->
+                        <div class="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col min-h-[500px]">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-50 gap-2">
+                                <h3 class="font-heading font-bold text-primary-900 flex items-center gap-2">
+                                    <i class="ph-duotone ph-list-checks text-2xl text-blue-500"></i> Hasil Pemetaan
+                                </h3>
+                                <div class="text-xs font-medium text-slate-500 bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-100 self-end md:self-auto">
+                                    SKS Diakui: <span id="cv-summary-diakui-display" class="font-black text-lg ml-1">0</span>
+                                </div>
+                            </div>
+                            <div id="course-list-container" class="space-y-4 overflow-y-auto custom-scrollbar flex-1 pr-2">
+                                <div class="h-full flex flex-col items-center justify-center text-slate-300 py-12">
+                                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                        <i class="ph-duotone ph-list-dashes text-4xl"></i>
+                                    </div>
+                                    <p class="text-sm font-medium">Hasil konversi akan muncul di sini setelah scan.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT COLUMN (Sidebar / Summary) -->
+                    <div class="lg:w-80 shrink-0 flex flex-col gap-6">
+                        
+                        <!-- 1. Biodata -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative group">
+                            <div class="h-16 bg-primary-900 relative p-4 flex items-center justify-between">
+                                <div class="text-white">
+                                    <p class="text-[10px] font-medium opacity-80 uppercase tracking-widest">Biodata Mahasiswa</p>
+                                </div>
+                                <button onclick="toggleEditBiodata(this)" class="w-8 h-8 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-white transition cursor-pointer" title="Edit Data">
+                                    <i class="ph-bold ph-pencil-simple text-lg" id="icon-edit-bio"></i>
+                                </button>
+                            </div>
+
+                            <div class="p-5 pt-4 relative">
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1">Nama Lengkap</p>
+                                        <p id="display-cv-name" class="text-sm font-bold text-primary-900 truncate px-1 rounded transition-colors">-</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1">Asal Kampus</p>
+                                        <p id="display-cv-univ" class="text-xs font-bold text-slate-600 truncate px-1 rounded transition-colors">-</p>
+                                    </div>
+                                    <div class="grid grid-cols-1 gap-3 pt-3 border-t border-slate-50">
+                                        <div>
+                                            <p class="text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1">Email</p>
+                                            <div class="flex items-center gap-2">
+                                                <i class="ph-bold ph-envelope-simple text-secondary-500 text-xs shrink-0"></i>
+                                                <p id="display-cv-email" class="text-xs font-medium text-slate-600 truncate w-full px-1 rounded transition-colors">-</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="text-[9px] font-bold uppercase text-slate-400 tracking-wider mb-1">WhatsApp</p>
+                                            <div class="flex items-center gap-2">
+                                                <i class="ph-bold ph-whatsapp-logo text-green-500 text-xs shrink-0"></i>
+                                                <p id="display-cv-phone" class="text-xs font-medium text-slate-600 truncate w-full px-1 rounded transition-colors">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="biodata-empty-state" class="absolute inset-0 bg-white/90 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center text-center p-6 transition-opacity duration-300">
+                                    <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-2">
+                                        <i class="ph-bold ph-scan text-lg"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-500">Menunggu Hasil Scan</p>
+                                    <p class="text-[10px] text-slate-400 mt-1">Upload transkrip untuk menampilkan data.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Summary Card (Sticky) -->
+                        <div class="sticky top-20 lg:top-32 mb-20 lg:mb-0">
+                            <div class="bg-primary-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                                <div class="absolute bottom-0 left-0 w-24 h-24 bg-secondary-500/20 rounded-full blur-3xl -ml-10 -mb-10"></div>
+                                
+                                <div class="relative z-10">
+                                    <div class="flex justify-between items-start mb-6">
+                                        <h3 class="font-bold text-lg flex items-center gap-2"><i class="ph-fill ph-chart-pie-slice text-secondary-500"></i> Ringkasan</h3>
+                                    </div>
+                                    
+                                    <div class="space-y-4 mb-6">
+                                        <div class="flex justify-between items-end pb-2 border-b border-white/10">
+                                            <span class="text-xs opacity-70">Total SKS Wajib</span>
+                                            <span id="cv-summary-total" class="font-bold text-lg">144</span>
+                                        </div>
+                                        <div class="flex justify-between items-end pb-2 border-b border-white/10">
+                                            <span class="text-xs opacity-70">Potensi Diakui</span>
+                                            <span id="cv-summary-diakui" class="font-bold text-lg text-green-400">0</span>
+                                        </div>
+                                        <div class="flex justify-between items-end">
+                                            <span class="text-xs opacity-70">Sisa SKS</span>
+                                            <span id="cv-summary-sisa" class="font-bold text-2xl text-white">144</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white/10 rounded-xl p-4 mb-6 backdrop-blur-sm border border-white/10">
+                                        <p class="text-[9px] uppercase opacity-60 font-bold tracking-wider mb-1">Estimasi Masa Studi</p>
+                                        <div class="flex items-baseline gap-2">
+                                            <span id="cv-summary-sem" class="text-4xl font-black text-secondary-500">8</span>
+                                            <span class="text-sm font-medium">Semester Lagi</span>
+                                        </div>
+                                    </div>
+
+                                    <button onclick="saveToKaprodi()" class="w-full py-4 bg-white text-primary-900 rounded-xl font-bold hover:bg-slate-100 transition flex items-center justify-center gap-2 text-xs uppercase tracking-wide shadow-lg group">
+                                        <span>Submit</span>
+                                        <i class="ph-bold ph-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- HASIL KONVERSI PAGE -->
+            <div id="page-hasil" class="hidden space-y-6 lg:space-y-8 animate-page">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-primary-900">
+                    <div>
+                        <h2 class="font-heading text-lg lg:text-xl font-semibold uppercase tracking-tight">Hasil Akhir</h2>
+                        <p class="text-slate-400 text-xs lg:text-sm italic">Status 'Approved' diperlukan untuk cetak Berita Acara.</p>
+                    </div>
+                    <div class="flex gap-2 items-center w-full md:w-auto">
+                        <button onclick="exportToCSV()" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all bg-green-500 text-white shadow-sm hover:bg-green-600 flex items-center justify-center gap-2"><i class="ph-bold ph-file-csv"></i> Export Data</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden min-h-[450px] shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left admin-table whitespace-nowrap">
+                            <thead><tr><th>Nama Mahasiswa</th><th>Asal Kampus</th><th>Prodi Tujuan</th><th class="text-center">SKS Diakui</th><th>Lama Studi</th><th>Status</th><th class="text-right">Aksi Manajemen</th></tr></thead>
+                            <tbody id="hasil-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="hasil-empty" class="hidden text-center py-24 text-slate-300 italic font-medium">Data pendaftar kosong.</div>
+                </div>
+            </div>
+
+            <!-- LAPORAN PAGE -->
+            <div id="page-laporan" class="hidden space-y-6 lg:space-y-8 animate-page">
+                <header>
+                    <h2 class="font-heading text-lg lg:text-xl font-semibold tracking-tight text-primary-900 uppercase">Laporan Akademik</h2>
+                    <p class="text-slate-400 text-xs lg:text-sm">Rekapitulasi data konversi dan performa penerimaan mahasiswa.</p>
+                </header>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                    <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-xs uppercase mb-6 text-primary-900 flex items-center gap-2"><i class="ph-bold ph-chart-donut text-blue-500"></i> Rekap Status</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl"><span class="text-sm font-bold text-slate-600">Disetujui (Approved)</span><span class="text-lg font-black text-green-600" id="lap-approved">0</span></div>
+                            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl"><span class="text-sm font-bold text-slate-600">Menunggu (Pending)</span><span class="text-lg font-black text-orange-500" id="lap-pending">0</span></div>
+                            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl"><span class="text-sm font-bold text-slate-600">Perlu Revisi</span><span class="text-lg font-black text-yellow-500" id="lap-revisi">0</span></div>
+                            <div class="flex justify-between items-center p-4 bg-slate-50 rounded-xl"><span class="text-sm font-bold text-slate-600">Ditolak</span><span class="text-lg font-black text-red-500" id="lap-rejected">0</span></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-xs uppercase mb-6 text-primary-900 flex items-center gap-2"><i class="ph-bold ph-buildings text-purple-500"></i> Top Asal Kampus</h3>
+                        <div class="flex-1 min-h-[250px] relative w-full"><canvas id="chart-top-campus"></canvas></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-100 shadow-sm">
+                    <h3 class="font-bold text-xs uppercase mb-6 text-primary-900 flex items-center gap-2"><i class="ph-bold ph-trend-up text-green-500"></i> Analisis Rata-rata SKS Diakui</h3>
+                    <div class="overflow-x-auto"><table class="w-full admin-table text-left"><thead><tr><th>Program Studi</th><th class="text-center">Jlh Mahasiswa</th><th class="text-center">Rata-rata SKS Diakui</th><th class="text-center">IPK Rata-rata (Asal)</th></tr></thead><tbody id="lap-table-analisis"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- PENGATURAN PAGE -->
+            <div id="page-pengaturan" class="hidden space-y-6 lg:space-y-8 animate-page">
+                <div class="flex flex-col lg:flex-row gap-6 lg:gap-10">
+                    
+                    <!-- Sidebar Mobile Horizontal Scrollable -->
+                    <div id="config-sidebar" class="lg:w-72 shrink-0 flex flex-row lg:flex-col overflow-x-auto gap-2 no-print text-primary-900 pb-2 lg:pb-0 no-scrollbar">
+                        <div onclick="switchSettingsTab('identitas')" id="set-tab-identitas" class="sidebar-link lg:flex active mobile-scroll-link lg:w-full"><div class="flex items-center gap-3"><i class="ph-bold ph-buildings text-lg lg:text-xl"></i> <span>Profil Kampus</span></div></div>
+                        <div onclick="switchSettingsTab('prodi')" id="set-tab-prodi" class="sidebar-link lg:flex mobile-scroll-link lg:w-full"><div class="flex items-center gap-3"><i class="ph-bold ph-graduation-cap text-lg lg:text-xl"></i> <span>Program Studi</span></div></div>
+                        <div onclick="switchSettingsTab('kamus')" id="set-tab-kamus" class="sidebar-link lg:flex mobile-scroll-link lg:w-full"><div class="flex items-center gap-3"><i class="ph-bold ph-books text-lg lg:text-xl"></i> <span>Kamus Sinonim</span></div></div>
+                        <div onclick="switchSettingsTab('billing')" id="set-tab-billing" class="sidebar-link lg:flex mobile-scroll-link lg:w-full"><div class="flex items-center gap-3"><i class="ph-bold ph-receipt text-lg lg:text-xl"></i> <span>Tagihan</span></div></div>
+                        <div onclick="switchSettingsTab('info')" id="set-tab-info" class="sidebar-link lg:flex mobile-scroll-link lg:w-full"><div class="flex items-center gap-3"><i class="ph-bold ph-info text-lg lg:text-xl"></i> <span>Tentang</span></div></div>
+                    </div>
+
+                    <div id="settings-content-wrapper" class="flex-1 min-w-0 bg-white rounded-2xl p-6 lg:p-10 border border-slate-100 min-h-[500px] lg:min-h-[600px] shadow-sm">
+                        
+                        <!-- Identitas -->
+                        <div id="set-content-identitas" class="space-y-8 lg:space-y-10">
+                            <div class="flex justify-between items-center border-b pb-6"><h3 class="font-heading text-lg font-semibold uppercase text-primary-900">Data Institusi</h3><button onclick="saveCampusData()" class="bg-primary-900 text-white px-6 lg:px-8 py-2.5 rounded-xl text-xs font-bold uppercase shadow-lg hover:brightness-110 transition-all">Simpan</button></div>
+                            <div class="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
+                                <div class="w-full md:w-48 text-center space-y-4">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-widest block">Logo Kampus</label>
+                                    <div class="relative group w-36 h-36 mx-auto bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden hover:border-primary-500 transition-all cursor-pointer shadow-inner" onclick="document.getElementById('input-logo-file').click()">
+                                        <i id="logo-preview-placeholder" class="ph-bold ph-image text-4xl text-slate-300"></i>
+                                        <img id="logo-preview-img" src="" class="hidden w-full h-full object-contain p-2">
+                                        <div class="absolute inset-0 bg-primary-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"><i class="ph-bold ph-camera text-2xl"></i></div>
+                                    </div>
+                                    <input type="file" id="input-logo-file" class="hidden" accept="image/*" onchange="handleLogoPreview(event)">
+                                    <p class="text-[9px] text-slate-400">Klik untuk upload. Max 2MB.</p>
+                                </div>
+                                <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-primary-900">
+                                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Nama Kampus</label><input type="text" id="cp-in-name" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-none font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Pimpinan (Rektor/Dir)</label><input type="text" id="cp-in-rektor" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-none font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                    <div class="space-y-1 md:col-span-2"><label class="text-[10px] font-black uppercase text-slate-400">Alamat Resmi</label><textarea id="cp-in-address" rows="2" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-none font-bold outline-none focus:ring-2 focus:ring-primary-500"></textarea></div>
+                                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Email Utama</label><input type="email" id="cp-in-email" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-none font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                    <div class="space-y-1"><label class="text-[10px] font-black uppercase text-slate-400">Nomor Telepon</label><input type="text" id="cp-in-phone" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-none font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                    <div class="space-y-1 md:col-span-2"><label class="text-[10px] font-black uppercase text-slate-400">Situs Website</label><input type="text" id="cp-in-web" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-none font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prodi -->
+                        <div id="set-content-prodi" class="hidden space-y-8">
+                            <div class="flex justify-between items-center border-b pb-6">
+                                <h3 class="font-heading text-lg font-semibold uppercase text-primary-900">Manajemen Program Studi</h3>
+                                <button onclick="openAddProdiModal()" class="bg-primary-900 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-primary-600 transition">+ Tambah Prodi</button>
+                            </div>
+                            <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full admin-table whitespace-nowrap">
+                                        <thead><tr><th class="w-24">Kode</th><th>Nama Prodi</th><th>Ketua Prodi</th><th class="text-center">Jenjang</th><th>Biaya Daftar</th><th>Uang Kuliah (UKT)</th><th class="text-center">Aksi Manajemen</th></tr></thead>
+                                        <tbody id="prodi-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kamus Sinonim (NEW) -->
+                        <div id="set-content-kamus" class="hidden space-y-8">
+                            <div class="flex justify-between items-center border-b pb-6">
+                                <div>
+                                    <h3 class="font-heading text-lg font-semibold uppercase text-primary-900">Kamus Sinonim Akademik</h3>
+                                    <p class="text-xs text-slate-400">Atur padanan kata untuk meningkatkan akurasi Auto-Scan.</p>
+                                </div>
+                                <button onclick="openDictionaryForm()" class="bg-primary-900 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-primary-700 transition flex items-center gap-2"><i class="ph-bold ph-plus"></i> Tambah Kata</button>
+                            </div>
+                            <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                <table class="w-full text-sm text-left admin-table">
+                                    <thead class="bg-slate-50 text-slate-500"><tr><th class="px-6 py-4 w-1/4">Istilah Utama (Kurikulum)</th><th class="px-6 py-4">Sinonim / Variasi (Transkrip Asal)</th><th class="px-6 py-4 text-center w-24">Aksi</th></tr></thead>
+                                    <tbody id="dictionary-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- BILLING -->
+                        <div id="set-content-billing" class="hidden space-y-8">
+                            <div class="flex justify-between items-center border-b pb-6">
+                                <h3 class="font-heading text-lg font-semibold uppercase text-primary-900">Tagihan & Riwayat Transaksi</h3>
+                                <div class="flex gap-2">
+                                    <button onclick="openTopUpModal()" class="bg-secondary-500 text-primary-900 px-6 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg hover:brightness-95 transition">+ Top Up Saldo</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Balance Card -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-primary-900 p-8 rounded-2xl text-white shadow-lg relative overflow-hidden">
+                                    <div class="absolute right-0 top-0 opacity-10"><i class="ph-fill ph-wallet text-9xl"></i></div>
+                                    <p class="text-[10px] font-bold uppercase text-primary-200 mb-1">Total Saldo Aktif</p>
+                                    <h3 class="text-4xl font-black text-white" id="billing-balance-display">Rp 0</h3>
+                                    <div class="mt-6 flex items-center gap-2">
+                                        <div id="billing-status-dot" class="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                                        <span id="billing-status-text" class="text-xs font-bold">Good Standing</span>
+                                    </div>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm flex flex-col justify-center">
+                                    <p class="text-[10px] font-bold uppercase text-slate-400 mb-2">Estimasi Tagihan Bulan Ini</p>
+                                    <h3 class="text-3xl font-black text-primary-900" id="billing-amount-display">Rp 0</h3>
+                                    <p class="text-xs text-slate-500 mt-2">Dihitung berdasarkan jumlah mahasiswa approved.</p>
+                                </div>
+                            </div>
+
+                            <!-- Transaction Table -->
+                            <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm mt-6">
+                                <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                                    <h4 class="font-bold text-sm text-primary-900" id="bill-label-type">Rincian Transaksi</h4>
+                                </div>
+                                <div class="overflow-x-auto max-h-[400px] custom-scrollbar">
+                                    <table class="w-full text-sm text-left">
+                                        <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0">
+                                            <tr><th class="px-6 py-3">Mahasiswa</th><th class="px-6 py-3">Prodi</th><th class="px-6 py-3 text-center">Tanggal</th><th class="px-6 py-3 text-right">Nominal</th></tr>
+                                        </thead>
+                                        <tbody id="billing-trace-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info -->
+                        <div id="set-content-info" class="hidden space-y-10">
+                            <div class="bg-primary-900 rounded-2xl p-10 text-white relative overflow-hidden">
+                                <h3 class="text-3xl font-black mb-6 flex items-center gap-3">Tentang KonverPro</h3>
+                                <p class="text-sm leading-8 opacity-90 font-medium text-justify">KonverPro adalah platform EdTech terdepan yang mengotomasi proses konversi SKS kurikulum antar-institusi.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="w-full py-6 text-center text-[10px] font-bold uppercase text-slate-400 no-print mb-16 lg:mb-0">&copy; 2025 KonverPro, PT Rajo Net Indonesia</footer>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Universal Modal -->
+    <div id="universal-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div id="universal-modal-content" class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+            <!-- Content injected via JS -->
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 z-[130] hidden flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4 text-primary-900">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-modal flex flex-col items-center text-center transform transition-all scale-100">
+            <div id="confirm-icon-bg" class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                <i id="confirm-icon" class="ph-bold ph-trash text-3xl"></i>
+            </div>
+            <h3 class="font-heading font-bold text-xl mb-2 text-primary-900" id="confirm-title">Konfirmasi Hapus</h3>
+            <p class="text-sm text-slate-500 mb-8 leading-relaxed px-4" id="confirm-message">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+            <div class="grid grid-cols-2 gap-3 w-full">
+                <button onclick="closeConfirmationModal()" class="py-3 bg-white border-2 border-slate-100 text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-50 transition">Batal</button>
+                <button id="btn-confirm-yes" class="py-3 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 shadow-lg shadow-red-500/30 transition flex items-center justify-center gap-2">
+                    <span id="confirm-btn-text">Ya, Hapus</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Result Modal -->
+    <div id="scan-result-modal" class="fixed inset-0 z-[140] hidden flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4 text-primary-900">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 animate-modal flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                <i class="ph-bold ph-check-circle text-4xl"></i>
+            </div>
+            <h3 class="font-heading font-bold text-2xl mb-2 text-primary-900">Scan Selesai!</h3>
+            <p class="text-sm text-slate-500 mb-6">Sistem telah menganalisis transkrip.</p>
+            
+            <div class="bg-slate-50 rounded-2xl p-4 w-full mb-6 border border-slate-100">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mata Kuliah Diakui</p>
+                <p class="text-4xl font-black text-green-600" id="scan-result-sks">0</p>
+                <p class="text-xs font-bold text-green-600 mt-1">SKS Konversi</p>
+            </div>
+            
+            <button onclick="document.getElementById('scan-result-modal').classList.add('hidden')" class="w-full py-3 bg-primary-900 text-white rounded-xl font-bold text-sm hover:bg-primary-800 transition">
+                Lihat Detail
+            </button>
+        </div>
+    </div>
+
+    <!-- Validation Modal -->
+    <div id="validation-modal" class="fixed inset-0 z-[110] hidden flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4 text-primary-900">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-modal">
+            <div class="flex justify-between items-center mb-4"><h3 class="font-black text-lg">Validasi Konversi</h3><button onclick="closeValidationModal()" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button></div>
+            <input type="hidden" id="val-mhs-id">
+            <div class="mb-4"><p class="text-xs text-slate-500 uppercase font-bold">Mahasiswa</p><p class="text-base font-bold text-primary-900" id="val-mhs-name">-</p></div>
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 uppercase font-bold block mb-2">Keputusan</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setValidationStatus('approved')" id="btn-val-approve" class="py-2 border-2 border-green-500 text-green-600 rounded-xl font-bold text-xs hover:bg-green-50 transition">Approve</button>
+                    <button onclick="setValidationStatus('revisi')" id="btn-val-revisi" class="py-2 border-2 border-yellow-500 text-yellow-600 rounded-xl font-bold text-xs hover:bg-yellow-50 transition">Revisi</button>
+                    <button onclick="setValidationStatus('ditolak')" id="btn-val-tolak" class="py-2 border-2 border-red-500 text-red-600 rounded-xl font-bold text-xs hover:bg-red-50 transition">Tolak</button>
+                </div>
+                <input type="hidden" id="val-selected-status">
+            </div>
+            <div id="val-reason-container" class="mb-6 hidden"><label class="text-xs text-slate-500 uppercase font-bold block mb-1">Catatan / Alasan</label><textarea id="val-reason" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm focus:ring-2 focus:ring-primary-500 outline-none"></textarea></div>
+            <button onclick="submitValidation()" class="w-full py-3 bg-primary-900 text-white rounded-xl font-bold text-xs uppercase hover:bg-primary-700">Simpan Keputusan</button>
+        </div>
+    </div>
+
+    <!-- Conversion View Modal -->
+    <div id="conversion-view-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-modal">
+            <div class="p-6 border-b flex justify-between items-center bg-white"><div><h3 class="text-xl font-black uppercase text-primary-900">Hasil Simulasi Konversi</h3><p class="text-sm text-slate-500" id="cv-student-name">Mahasiswa: -</p></div><button onclick="document.getElementById('conversion-view-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition"><i class="ph-bold ph-x text-lg"></i></button></div>
+            <div class="flex-1 overflow-y-auto p-8 bg-slate-50">
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm"><p class="text-[10px] font-bold uppercase text-slate-400">Total SKS Diakui</p><h4 class="text-3xl font-black text-primary-600" id="cv-sks-diakui">0</h4></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm"><p class="text-[10px] font-bold uppercase text-slate-400">SKS Harus Ditempuh</p><h4 class="text-3xl font-black text-orange-500" id="cv-sks-sisa">0</h4></div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm"><p class="text-[10px] font-bold uppercase text-slate-400">Estimasi Masa Studi</p><h4 class="text-3xl font-black text-primary-900" id="cv-masa-studi">0 Sem</h4></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-4"><div class="flex items-center gap-2"><div class="w-2 h-6 bg-green-500 rounded-full"></div><h4 class="font-bold text-primary-900">Mata Kuliah Diakui</h4></div><div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><table class="w-full text-xs text-left"><thead class="bg-slate-50 text-slate-500 border-b"><tr><th class="p-3">Kode</th><th class="p-3">Nama Matakuliah</th><th class="p-3 text-center">SKS</th><th class="p-3 text-center">Nilai</th></tr></thead><tbody id="cv-table-diakui"></tbody></table></div></div>
+                    <div class="space-y-4"><div class="flex items-center gap-2"><div class="w-2 h-6 bg-orange-500 rounded-full"></div><h4 class="font-bold text-primary-900">Mata Kuliah Yang Akan Diambil</h4></div><div class="bg-white rounded-xl border border-slate-200 overflow-hidden"><table class="w-full text-xs text-left"><thead class="bg-slate-50 text-slate-500 border-b"><tr><th class="p-3">Kode</th><th class="p-3">Nama Matakuliah</th><th class="p-3 text-center">SKS</th><th class="p-3 text-center">Sem</th></tr></thead><tbody id="cv-table-ambil"></tbody></table></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doc Preview Modal -->
+    <div id="doc-preview-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-2xl h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-modal">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50"><h3 class="font-bold text-primary-900">Preview Transkrip Nilai</h3><button onclick="document.getElementById('doc-preview-modal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-xl"></i></button></div>
+            <div class="flex-1 bg-slate-200 flex items-center justify-center p-8"><div class="bg-white p-8 shadow-lg w-full h-full flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-300 rounded-xl"><i class="ph-bold ph-file-pdf text-6xl mb-4"></i><p class="font-bold text-lg">Dokumen Transkrip.pdf</p><p class="text-xs">Simulasi Preview Dokumen</p></div></div>
+        </div>
+    </div>
+
+    <!-- Kurikulum Modal -->
+    <div id="kurikulum-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-modal">
+            <div class="p-6 border-b bg-slate-50 flex justify-between items-center"><h3 class="text-lg font-black uppercase text-primary-900">Upload Kurikulum</h3><button onclick="document.getElementById('kurikulum-modal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-2xl"></i></button></div>
+            <div class="p-10 text-center space-y-6"><div class="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto"><i class="ph-bold ph-file-arrow-up text-4xl"></i></div><div><h4 class="text-lg font-bold text-primary-900" id="kuri-prodi-name">Nama Prodi</h4><p class="text-xs text-slate-400 mt-1">Harap gunakan template resmi sistem.</p></div><button onclick="downloadCurriculumTemplate()" class="w-full py-3 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-slate-100 transition"><i class="ph-bold ph-download-simple"></i> Download Template (.csv)</button><div class="p-8 border-2 border-dashed border-slate-200 rounded-2xl hover:border-green-500 cursor-pointer transition-all" onclick="document.getElementById('kuri-file-input').click()"><p class="text-xs font-bold text-slate-500">Klik untuk unggah file</p><p id="kuri-file-name" class="text-[10px] text-green-600 mt-2 font-black italic"></p></div><input type="file" id="kuri-file-input" class="hidden" accept=".csv, .xlsx, .xls" onchange="document.getElementById('kuri-file-name').textContent = this.files[0].name"></div>
+            <div class="p-6 bg-slate-50 flex justify-end"><button onclick="saveKurikulum()" id="btn-save-kurikulum" class="px-10 py-3 bg-primary-900 text-white rounded-xl font-black text-xs uppercase hover:bg-primary-700">Selesai</button></div>
+        </div>
+    </div>
+
+    <!-- BA Modal -->
+    <div id="ba-modal" class="fixed inset-0 z-[100] hidden flex flex-col bg-slate-900/80 backdrop-blur-sm p-4">
+        <div class="flex-none p-4 flex justify-between items-center bg-white shadow-lg z-50 no-print rounded-t-xl"><h3 class="text-lg font-bold text-primary-900">Preview Dokumen Resmi</h3><div class="flex gap-3"><button onclick="closeBeritaAcara()" class="px-6 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200">Tutup</button><button onclick="window.print()" class="px-6 py-2 bg-primary-900 text-white font-bold rounded-xl text-xs shadow-lg hover:bg-primary-700">Cetak (PDF)</button></div></div>
+        <div class="flex-1 overflow-y-auto p-8 flex justify-center bg-slate-500 no-scrollbar"><div id="ba-print-area" class="bg-white w-full max-w-[210mm] min-h-[297mm] shadow-2xl p-[2cm] text-black font-serif relative"></div></div>
+    </div>
+
+    <!-- Topup Modal -->
+    <div id="topup-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4 text-primary-900">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-modal">
+            <div id="topup-step-1" class="p-8 text-center"><h3 class="text-xl font-black mb-6">Isi Saldo Kredit</h3><div class="grid grid-cols-3 gap-3 mb-6"><button onclick="selectTopUpAmount(1000000)" class="py-3 rounded-xl border-2 border-slate-100 hover:border-green-500 hover:bg-green-50 font-bold text-xs">1 Juta</button><button onclick="selectTopUpAmount(5000000)" class="py-3 rounded-xl border-2 border-slate-100 hover:border-green-500 hover:bg-green-50 font-bold text-xs">5 Juta</button><button onclick="selectTopUpAmount(10000000)" class="py-3 rounded-xl border-2 border-slate-100 hover:border-green-500 hover:bg-green-50 font-bold text-xs">10 Juta</button></div><input type="number" id="input-topup-custom" placeholder="Nominal Custom (Rp)" class="w-full px-6 py-3 rounded-xl bg-slate-50 font-bold text-primary-900 mb-6 text-center border-none outline-none focus:ring-2 focus:ring-primary-500"><div class="grid grid-cols-2 gap-3"><button onclick="closeTopUpModal()" class="py-3 bg-slate-100 rounded-xl font-bold text-xs text-slate-500 hover:bg-slate-200">Batal</button><button onclick="proceedToPayment()" class="py-3 bg-primary-900 text-white rounded-xl font-bold text-xs hover:bg-primary-700">Lanjut</button></div></div>
+            <div id="topup-step-2" class="hidden bg-gradient-to-br from-primary-900 to-primary-600 p-8 text-white"><div class="text-center mb-6"><h3 class="text-lg font-bold">Lakukan Transfer</h3><p class="text-xs opacity-60">Mandiri (Bank Code: 008)</p></div><div class="bg-white/10 p-6 mb-6 text-center rounded-xl border border-white/10"><p class="text-[10px] uppercase text-primary-200 mb-1">Rekening Tujuan</p><p class="text-2xl font-black text-secondary-500 tracking-wider">157-00-0537515-0</p><p class="text-xs text-white mt-1 font-medium">PT RAJO NET INDONESIA</p></div><div class="text-center"><h2 class="text-3xl font-black mb-6" id="payment-display-amount">Rp 0</h2><div class="grid grid-cols-2 gap-3"><button onclick="backToStep1()" class="py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-xs">Kembali</button><button onclick="confirmTopUp()" class="py-3 bg-secondary-500 hover:bg-secondary-400 text-primary-900 rounded-xl font-bold">Konfirmasi</button></div></div></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Prodi Modal -->
+    <div id="prodi-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-primary-900/60 backdrop-blur-sm p-4 text-primary-900">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-modal">
+            <div class="p-6 border-b bg-slate-50"><h3 class="text-xl font-bold uppercase text-primary-900">Form Program Studi</h3></div>
+            <div class="p-8 space-y-4">
+                <input type="hidden" id="in-prodi-idx">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[9px] font-black uppercase text-slate-400">Kode Prodi</label><input type="text" id="in-prodi-kode" class="w-full p-3 bg-slate-50 border-none rounded-xl font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                    <div><label class="text-[9px] font-black uppercase text-slate-400">Jenjang</label><select id="in-prodi-strata" class="w-full p-3 bg-slate-50 border-none rounded-xl font-bold outline-none focus:ring-2 focus:ring-primary-500"><option>S1</option><option>D3</option><option>D4</option><option>S2</option></select></div>
+                </div>
+                <div><label class="text-[9px] font-black uppercase text-slate-400">Nama Prodi</label><input type="text" id="in-prodi-nama" class="w-full p-3 bg-slate-50 border-none rounded-xl font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                <div><label class="text-[9px] font-black uppercase text-slate-400">Ketua Prodi</label><input type="text" id="in-prodi-kaprodi" class="w-full p-3 bg-slate-50 border-none rounded-xl font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[9px] font-black uppercase text-slate-400">Uang Kuliah (UKT)</label><input type="number" id="in-prodi-tuition" min="0" oninput="validity.valid||(value='');" class="w-full p-3 bg-slate-50 border-none rounded-xl font-bold outline-none focus:ring-2 focus:ring-primary-500"></div>
+                    <div><label class="text-[9px] font-black uppercase text-slate-400">Biaya Pendaftaran</label><input type="number" id="in-prodi-fee" min="0" oninput="validity.valid||(value='');" class="w-full p-3 bg-slate-50 border-none rounded-xl font-bold outline-none focus:ring-2 focus:ring-primary-500" placeholder="Rp"></div>
+                </div>
+
+                <!-- Signature Section -->
+                <div class="border-t border-slate-100 pt-4 mt-4">
+                    <label class="text-[9px] font-black uppercase text-slate-400 mb-2 block">Tanda Tangan Digital Kaprodi</label>
+                    <div class="flex flex-col gap-3">
+                        <!-- Canvas Area -->
+                        <div class="relative w-full h-32 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden touch-none">
+                            <canvas id="sig-canvas" class="w-full h-full"></canvas>
+                            <div id="sig-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-xs">
+                                <span>Coret tanda tangan di sini</span>
+                            </div>
+                        </div>
+                        <!-- Controls -->
+                        <div class="flex justify-between items-center">
+                            <button onclick="clearSignature()" class="text-xs text-red-500 font-bold hover:underline">Hapus / Ulangi</button>
+                            <div class="relative">
+                                 <button onclick="document.getElementById('sig-upload').click()" class="text-xs text-primary-600 font-bold hover:underline flex items-center gap-1"><i class="ph-bold ph-upload-simple"></i> Upload Gambar</button>
+                                 <input type="file" id="sig-upload" class="hidden" accept="image/*" onchange="handleSigUpload(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50 grid grid-cols-2 gap-4"><button onclick="closeAddProdiModal()" class="py-3 bg-white border rounded-xl font-bold text-xs uppercase hover:bg-slate-50">Batal</button><button onclick="saveProdiData()" id="btn-save-prodi" class="py-3 bg-primary-900 text-white rounded-xl font-bold text-xs uppercase hover:bg-primary-700 flex items-center justify-center gap-2"><span>Simpan Data</span></button></div>
+        </div>
+    </div>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        const KEY_CAMPUS = 'kp_campus_v2', KEY_PRODI = 'kp_prodi_v2', KEY_MHS = 'kp_mhs_v2', KEY_APP_STATE = 'kp_state_v2', KEY_DICTIONARY = 'kp_dictionary_v1';
+        
+        const APP_STATE = {
+            saldo: 7500000,
+            active_hasil_tab: 'regular', 
+            active_bill_type: 'internal',
+            active_akad_idx: null,
+            active_kurikulum_idx: null, 
+            pendingApprovalId: null, 
+            campus_logo: null, 
+            charts: { main: null, trend: null, topCampus: null },
+            tempSettings: { originTypes: [], excludedCourses: [] }
+        };
+
+        let cvState = {
+            currentProdi: "",
+            selectedCourses: {},
+            uploadedFile: null,
+            rawTranscript: [],
+            studentName: "",
+            prevUniv: "",
+            studentEmail: "",
+            studentPhone: "" 
+        };
+
+        // --- SIGNATURE PAD LOGIC ---
+        let isDrawing = false;
+        let sigCanvas, sigCtx;
+
+        function initSignaturePad() {
+            sigCanvas = document.getElementById('sig-canvas');
+            sigCtx = sigCanvas.getContext('2d');
+            
+            // Set canvas resolution for better quality
+            const rect = sigCanvas.parentElement.getBoundingClientRect();
+            sigCanvas.width = rect.width;
+            sigCanvas.height = rect.height;
+            
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.strokeStyle = '#000';
+
+            // Mouse Events
+            sigCanvas.addEventListener('mousedown', startDraw);
+            sigCanvas.addEventListener('mouseup', endDraw);
+            sigCanvas.addEventListener('mousemove', draw);
+            sigCanvas.addEventListener('mouseleave', endDraw);
+
+            // Touch Events
+            sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0]); });
+            sigCanvas.addEventListener('touchend', (e) => { e.preventDefault(); endDraw(); });
+            sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+        }
+
+        function startDraw(e) {
+            isDrawing = true;
+            document.getElementById('sig-placeholder').classList.add('hidden');
+            draw(e);
+        }
+
+        function endDraw() {
+            isDrawing = false;
+            sigCtx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = sigCanvas.getBoundingClientRect();
+            const x = (e.clientX || e.pageX) - rect.left;
+            const y = (e.clientY || e.pageY) - rect.top;
+
+            sigCtx.lineTo(x, y);
+            sigCtx.stroke();
+            sigCtx.beginPath();
+            sigCtx.moveTo(x, y);
+        }
+
+        function clearSignature() {
+            if(sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            document.getElementById('sig-placeholder').classList.remove('hidden');
+        }
+
+        function handleSigUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        clearSignature();
+                        // Draw image centered and scaled to fit
+                        const scale = Math.min(sigCanvas.width / img.width, sigCanvas.height / img.height) * 0.8;
+                        const x = (sigCanvas.width / 2) - (img.width / 2) * scale;
+                        const y = (sigCanvas.height / 2) - (img.height / 2) * scale;
+                        sigCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                        document.getElementById('sig-placeholder').classList.add('hidden');
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function getSignatureData() {
+            // Check if canvas is empty
+            const blank = document.createElement('canvas');
+            blank.width = sigCanvas.width;
+            blank.height = sigCanvas.height;
+            if (sigCanvas.toDataURL() === blank.toDataURL()) return null;
+            return sigCanvas.toDataURL();
+        }
+
+        function loadSignatureData(dataUrl) {
+            if (!dataUrl) {
+                clearSignature();
+                return;
+            }
+            const img = new Image();
+            img.onload = function() {
+                sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+                sigCtx.drawImage(img, 0, 0);
+                document.getElementById('sig-placeholder').classList.add('hidden');
+            }
+            img.src = dataUrl;
+        }
+
+
+        const COMMON_COURSES = ["Pendidikan Agama", "Pancasila", "Kewarganegaraan", "Bahasa Indonesia", "Bahasa Inggris Dasar", "Technopreneurship", "Skripsi / Tugas Akhir", "Kuliah Kerja Nyata (KKN)", "Magang Industri", "Metodologi Penelitian", "Etika Profesi", "Kecerdasan Buatan Dasar", "Wawasan Nusantara"];
+
+        function initData() {
+            if (localStorage.getItem(KEY_APP_STATE)) {
+                const savedState = JSON.parse(localStorage.getItem(KEY_APP_STATE));
+                APP_STATE.saldo = savedState.saldo || 7500000;
+            } else {
+                saveAppState(); 
+            }
+
+            if (!localStorage.getItem(KEY_CAMPUS)) {
+                localStorage.setItem(KEY_CAMPUS, JSON.stringify({ name: 'Universitas Siber Asia', rektor: 'Prof. Dr. Ir. Tech Expert', email: 'admin@unsia.ac.id', address: 'Jl. Harsono RM No. 1, Ragunan, Jakarta Selatan', phone: '021-12345678', web: 'www.unsia.ac.id', logo: null }));
+            }
+
+            if (!localStorage.getItem(KEY_PRODI)) {
+                const defaultParams = { maxSks: 144, maxYear: 7, minAccreditation: "B", originTypes: ["Pindahan Antar PT", "Alih Jenjang D3 ke S1"], maxConvertSksPercent: 70, minGrade: "C", minGpa: 2.50, letterFormat: "BA/{YEAR}/{NO}/{PRODI}", excludedCourses: ["Skripsi / Tugas Akhir", "Kuliah Kerja Nyata (KKN)"] };
+                
+                const dummyCurriculumSI = [
+                    {kode: "SI101", nama: "Algoritma Pemrograman", sks: 3, sem: 1, type: "Wajib"},
+                    {kode: "SI102", nama: "Basis Data", sks: 4, sem: 2, type: "Wajib"},
+                    {kode: "SI201", nama: "Struktur Data", sks: 3, sem: 2, type: "Wajib"},
+                    {kode: "SI203", nama: "Pemrograman Berorientasi Objek", sks: 4, sem: 3, type: "Wajib"},
+                    {kode: "SI205", nama: "Sistem Operasi", sks: 3, sem: 3, type: "Wajib"},
+                    {kode: "SI301", nama: "Rekayasa Perangkat Lunak", sks: 3, sem: 4, type: "Wajib"},
+                    {kode: "SI302", nama: "Jaringan Komputer", sks: 3, sem: 4, type: "Wajib"},
+                    {kode: "SI401", nama: "Kecerdasan Buatan", sks: 3, sem: 5, type: "Wajib"},
+                    {kode: "SI405", nama: "Manajemen Proyek SI", sks: 3, sem: 6, type: "Wajib"},
+                    {kode: "SI500", nama: "Metodologi Penelitian", sks: 2, sem: 7, type: "Wajib"}
+                ];
+
+                localStorage.setItem(KEY_PRODI, JSON.stringify([
+                    { kode: "57201", nama: "Sistem Informasi", kaprodi: "Noviandri, M.Kom", strata: "S1", tuition: 12000000, registrationFee: 150000, rules: [{sem:1, sks:20}, {sem:2, sks:24}], params: {...defaultParams}, curriculumData: dummyCurriculumSI, curriculumFile: "Default_Template_SI.xlsx" },
+                    { kode: "55201", nama: "Informatika", kaprodi: "Agustina, M.Kom", strata: "S1", tuition: 13500000, registrationFee: 150000, rules: [{sem:1, sks:20}], params: {...defaultParams} },
+                    { kode: "61201", nama: "Manajemen", kaprodi: "Dr. Budi Santoso", strata: "S1", tuition: 11000000, registrationFee: 150000, rules: [], params: {...defaultParams, maxSks: 80, maxYear: 5} }
+                ]));
+            }
+            
+            if (!localStorage.getItem(KEY_MHS)) {
+                localStorage.setItem(KEY_MHS, JSON.stringify([]));
+            }
+
+            // INJECT MASTER DATA KAMUS (Default if empty)
+            if (!localStorage.getItem(KEY_DICTIONARY)) {
+                const masterData = [
+                    { "id": 1001, "main_term": "Pendidikan Pancasila", "synonyms": ["Pancasila", "Ideologi Negara", "Falsafah Negara"] },
+                    { "id": 1002, "main_term": "Pendidikan Kewarganegaraan", "synonyms": ["Kewarganegaraan", "PKN", "Civic Education", "Civics"] },
+                    { "id": 1003, "main_term": "Pendidikan Agama", "synonyms": ["Agama", "Pendidikan Agama Islam", "PAI", "Religion", "Religiusitas"] },
+                    { "id": 1004, "main_term": "Bahasa Indonesia", "synonyms": ["Tata Tulis Karya Ilmiah", "Bhs Indo", "Indonesian Language", "Teknik Penulisan Ilmiah"] },
+                    { "id": 1005, "main_term": "Bahasa Inggris", "synonyms": ["English", "General English", "Bahasa Inggris Dasar", "English for Academic Purposes"] },
+                    { "id": 1019, "main_term": "Algoritma dan Pemrograman", "synonyms": ["Alpro", "Dasar Pemrograman", "Logika Pemrograman", "Algorithm", "Programming Logic", "Coding"] },
+                    { "id": 1020, "main_term": "Struktur Data", "synonyms": ["Data Structures", "Strukdat", "Algoritma dan Struktur Data", "ASD"] },
+                    { "id": 1021, "main_term": "Basis Data", "synonyms": ["Database", "Sistem Basis Data", "DBMS", "Pengantar Basis Data", "SQL"] },
+                    { "id": 1035, "main_term": "Pengantar Manajemen", "synonyms": ["Dasar Manajemen", "Asas Manajemen", "Principles of Management", "Manajemen Umum"] },
+                    { "id": 1036, "main_term": "Pengantar Akuntansi", "synonyms": ["Akuntansi Dasar", "Accounting 1", "Dasar Akuntansi", "Akuntansi Keuangan Dasar"] }
+                ];
+                localStorage.setItem(KEY_DICTIONARY, JSON.stringify(masterData));
+            }
+
+            const c = JSON.parse(localStorage.getItem(KEY_CAMPUS));
+            if(c.logo) APP_STATE.campus_logo = c.logo;
+        }
+
+        function saveAppState() {
+            localStorage.setItem(KEY_APP_STATE, JSON.stringify({ saldo: APP_STATE.saldo }));
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+
+            if (email !== 'admin@unsia.ac.id' || pass !== 'password') {
+                showToast('error', 'Email atau kata sandi salah!');
+                return;
+            }
+
+            const btn = document.getElementById('btn-login');
+            const originalText = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Verifikasi...`; btn.classList.add('opacity-80', 'cursor-not-allowed');
+            setTimeout(() => {
+                document.getElementById('page-login').classList.add('hidden');
+                document.getElementById('app-layout').classList.remove('hidden');
+                renderDashboard();
+                showToast('success', 'Selamat datang kembali, Administrator!');
+                btn.disabled = false; btn.innerHTML = originalText; btn.classList.remove('opacity-80', 'cursor-not-allowed');
+            }, 1000);
+        }
+
+        // --- UNIVERSAL MODAL SYSTEM ---
+        function openModal(title, contentHtml, buttonsHtml, maxWidth = 'max-w-lg') {
+            const modal = document.getElementById('universal-modal');
+            const container = document.getElementById('universal-modal-content');
+            
+            container.className = `bg-white w-full ${maxWidth} rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300`;
+            container.innerHTML = `
+                <div class="p-6 border-b bg-slate-50 flex justify-between items-center"><h3 class="text-xl font-bold uppercase text-primary-900">${title}</h3><button onclick="closeModal()" class="text-slate-400 hover:text-red-500"><i class="ph-bold ph-x text-2xl"></i></button></div>
+                <div class="p-6">${contentHtml}</div>
+                ${buttonsHtml ? `<div class="p-6 bg-slate-50 flex justify-end gap-3">${buttonsHtml}</div>` : ''}
+            `;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); container.classList.remove('scale-95'); container.classList.add('scale-100'); }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('universal-modal');
+            const container = document.getElementById('universal-modal-content');
+            modal.classList.add('opacity-0'); container.classList.remove('scale-100'); container.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        let confirmCallback = null;
+
+        function openConfirmationModal(title, message, callback, btnText = 'Ya, Hapus', btnColor = 'bg-red-500') {
+            confirmCallback = callback;
+            const content = `
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4"><i class="ph-bold ph-trash text-3xl"></i></div>
+                    <p class="text-sm text-slate-500 mb-2 leading-relaxed">${message}</p>
+                </div>`;
+            const buttons = `
+                <button onclick="closeModal()" class="py-3 px-6 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-50 transition">Batal</button>
+                <button onclick="if(confirmCallback) confirmCallback(); closeModal();" class="py-3 px-6 ${btnColor} text-white rounded-xl font-bold text-sm hover:brightness-90 shadow-lg transition flex items-center justify-center gap-2">${btnText}</button>
+            `;
+            openModal(title, content, buttons, 'max-w-sm');
+        }
+
+        function handleLogout() {
+            openConfirmationModal(
+                "Konfirmasi Keluar",
+                "Apakah Anda yakin ingin keluar dari aplikasi?",
+                () => {
+                    document.getElementById('app-layout').classList.add('hidden');
+                    document.getElementById('page-login').classList.remove('hidden');
+                    showToast('info', 'Anda telah keluar.');
+                },
+                "Keluar",
+                "bg-slate-700"
+            );
+        }
+
+        // --- DICTIONARY CRUD ---
+        function renderDictionaryTable() {
+            const list = JSON.parse(localStorage.getItem(KEY_DICTIONARY) || "[]");
+            const tbody = document.getElementById('dictionary-table-body');
+            
+            if(list.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-slate-400 italic">Kamus kosong.</td></tr>`; 
+                return; 
+            }
+            
+            tbody.innerHTML = list.map(item => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-bold text-primary-900">${item.main_term}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-2">
+                            ${item.synonyms.map(s => `<span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-bold border border-blue-100">${s}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center gap-1">
+                            <button onclick="openDictionaryForm(${item.id})" class="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit"><i class="ph-bold ph-pencil-simple"></i></button>
+                            <button onclick="deleteDictionaryItem(${item.id})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Hapus"><i class="ph-bold ph-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Combined Open Modal Function
+        function openDictionaryForm(id = null) {
+            let data = { main_term: '', synonyms: [] };
+            let title = "Tambah Sinonim";
+            
+            if (id) {
+                const list = JSON.parse(localStorage.getItem(KEY_DICTIONARY) || "[]");
+                const found = list.find(x => x.id === id);
+                if(found) {
+                    data = found;
+                    title = "Edit Sinonim";
+                }
+            }
+
+            const content = `
+                <input type="hidden" id="dict-input-id" value="${id || ''}">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Istilah Utama (Target)</label>
+                        <input type="text" id="dict-input-main" value="${data.main_term}" placeholder="Contoh: Basis Data" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-primary-900 focus:ring-2 focus:ring-primary-500 outline-none">
+                        <p class="text-[10px] text-slate-400 mt-1">Nama mata kuliah standar di kurikulum Anda.</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Sinonim (Pisahkan dengan koma)</label>
+                        <textarea id="dict-input-synonyms" rows="3" placeholder="Contoh: Database, SQL, DBMS, Penyimpanan Data" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-primary-500 outline-none">${data.synonyms.join(', ')}</textarea>
+                        <p class="text-[10px] text-slate-400 mt-1">Variasi nama yang mungkin muncul di transkrip pendaftar.</p>
+                    </div>
+                </div>`;
+            const buttons = `<button onclick="closeModal()" class="px-4 py-2 text-slate-500 font-bold text-xs hover:bg-slate-100 rounded-lg">Batal</button><button onclick="saveDictionaryItem()" class="px-6 py-2 bg-primary-900 text-white font-bold text-xs rounded-lg hover:bg-primary-700">Simpan</button>`;
+            openModal(title, content, buttons);
+        }
+
+        // Backward compatibility wrapper if `openAddDictionaryModal` is called in HTML
+        function openAddDictionaryModal() {
+            openDictionaryForm();
+        }
+
+        function saveDictionaryItem() {
+            const id = document.getElementById('dict-input-id').value;
+            const main = document.getElementById('dict-input-main').value.trim();
+            const synStr = document.getElementById('dict-input-synonyms').value.trim();
+            
+            if(!main || !synStr) { showToast('error', 'Mohon lengkapi semua data.'); return; }
+            
+            const synonyms = synStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            let list = JSON.parse(localStorage.getItem(KEY_DICTIONARY) || "[]");
+            
+            if (id) {
+                // Edit existing
+                const index = list.findIndex(x => x.id == id);
+                if (index !== -1) {
+                    list[index].main_term = main;
+                    list[index].synonyms = synonyms;
+                    showToast('success', 'Kamus berhasil diperbarui.');
+                }
+            } else {
+                // Add new
+                list.unshift({ id: Date.now(), main_term: main, synonyms: synonyms });
+                showToast('success', 'Entri baru ditambahkan.');
+            }
+            
+            localStorage.setItem(KEY_DICTIONARY, JSON.stringify(list));
+            renderDictionaryTable();
+            closeModal();
+        }
+
+        function deleteDictionaryItem(id) {
+            if(confirm('Hapus entri kamus ini?')) {
+                let list = JSON.parse(localStorage.getItem(KEY_DICTIONARY) || "[]");
+                list = list.filter(x => x.id !== id);
+                localStorage.setItem(KEY_DICTIONARY, JSON.stringify(list));
+                renderDictionaryTable();
+                showToast('success', 'Entri dihapus.');
+            }
+        }
+
+        function showToast(type, message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let bgClass, iconClass, title;
+            if (type === 'success') { bgClass = 'bg-white border-l-4 border-green-500'; iconClass = 'text-green-500 ph-check-circle'; title = 'Sukses'; } 
+            else if (type === 'info') { bgClass = 'bg-white border-l-4 border-blue-500'; iconClass = 'text-blue-500 ph-info'; title = 'Info'; } 
+            else { bgClass = 'bg-white border-l-4 border-red-500'; iconClass = 'text-red-500 ph-warning-circle'; title = 'Gagal'; }
+            toast.className = `${bgClass} p-4 rounded-lg shadow-lg flex items-center gap-3 w-80 animate-slideIn transition-all duration-300 transform`;
+            toast.innerHTML = `<i class="ph-bold ${iconClass} text-2xl"></i><div><h4 class="text-sm font-bold text-primary-900">${title}</h4><p class="text-xs text-slate-500">${message}</p></div>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('animate-slideIn'); toast.classList.add('animate-slideOut'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function setLoading(btnId, isLoading) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (isLoading) {
+                btn.dataset.originalText = btn.innerHTML;
+                btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Memproses...`;
+                btn.disabled = true; btn.classList.add('opacity-70', 'cursor-not-allowed');
+            } else {
+                btn.innerHTML = btn.dataset.originalText;
+                btn.disabled = false; btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        function switchPage(pageId) {
+            ['dashboard', 'konversi', 'hasil', 'laporan', 'pengaturan', 'akad-settings'].forEach(id => {
+                const el = document.getElementById('page-' + id);
+                const btn = document.getElementById('nav-' + id);
+                const mobBtn = document.getElementById('mob-nav-' + id);
+                
+                if (el) el.classList.toggle('hidden', id !== pageId);
+                
+                // Desktop Nav Active State
+                if (btn) btn.classList.toggle('active-menu', id === pageId);
+                
+                // Mobile Nav Active State
+                if (mobBtn) {
+                    if (id === pageId) {
+                        mobBtn.classList.add('active-mobile-menu');
+                        mobBtn.classList.remove('text-slate-400');
+                    } else {
+                        mobBtn.classList.remove('active-mobile-menu');
+                        mobBtn.classList.add('text-slate-400');
+                    }
+                }
+            });
+            if (pageId === 'dashboard') renderDashboard();
+            if (pageId === 'hasil') renderHasilTable();
+            if (pageId === 'laporan') renderLaporan();
+            if (pageId === 'pengaturan') switchSettingsTab('identitas');
+            if (pageId === 'konversi') initKonversiPage();
+        }
+
+        // --- KONVERSI LOGIC & INTEGRATION (ENHANCED) ---
+        
+        function initKonversiPage() {
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+            const select = document.getElementById('prodi-select-konversi');
+            select.innerHTML = list.map(p => `<option value="${p.nama}">${p.strata} ${p.nama}</option>`).join('');
+            
+            select.onchange = (e) => {
+                cvState.currentProdi = e.target.value;
+                cvState.selectedCourses = {};
+                renderKonversiResults();
+            };
+
+            if(list.length > 0 && !cvState.currentProdi) {
+                cvState.currentProdi = list[0].nama;
+            } else if (list.length > 0 && cvState.currentProdi) {
+                select.value = cvState.currentProdi;
+            }
+            
+            renderKonversiResults();
+        }
+        
+        function transformCurriculum(prodiName) {
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+            const prodi = list.find(p => p.nama === prodiName);
+            if(!prodi || !prodi.curriculumData) return [];
+
+            const semesters = {};
+            prodi.curriculumData.forEach(row => {
+                let code="", name="", sks=0, sem=0, type="Wajib";
+                Object.keys(row).forEach(k => {
+                    const kl = k.toLowerCase();
+                    const v = row[k];
+                    if(kl.includes("kode")) code = v;
+                    else if(kl.includes("nama") || kl.includes("mata")) name = v;
+                    else if(kl === "sks" || kl.includes("kredit")) sks = parseInt(v);
+                    else if(kl.includes("sem") || kl.includes("smt")) sem = parseInt(v);
+                    else if(kl.includes("tipe") || kl.includes("wajib") || kl.includes("jenis")) type = v;
+                });
+
+                if(!sem) sem = 1;
+                if(!semesters[sem]) semesters[sem] = [];
+                semesters[sem].push({ code, name, sks, type });
+            });
+
+            return Object.keys(semesters).sort((a,b)=>a-b).map(s => ({
+                semester: parseInt(s),
+                courses: semesters[s]
+            }));
+        }
+        
+        // --- SMART MATCHING LOGIC ---
+        function expandAbbr(str) {
+            if (!str) return "";
+            let s = String(str).toLowerCase().trim().replace(/[^a-z0-9\s]/g, " ");
+            const mappings = { "peng": "pengantar", "tek": "teknologi", "sis": "sistem", "info": "informasi", "algo": "algoritma", "bhs": "bahasa", "ing": "inggris" };
+            return s.split(/\s+/).map(w => mappings[w] || w).join(" ");
+        }
+
+        function levenshtein(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) == a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        // Fuzzy Logic Upgrade
+        function removeStopWords(str) {
+            const stopWords = ["pengantar", "dasar", "konsep", "teori", "praktikum", "dan", "of", "introduction", "to", "basic", "fundamental"];
+            return str.split(' ').filter(word => !stopWords.includes(word)).join(' ');
+        }
+
+        function calculateSimilarity(source, target) {
+            let s = expandAbbr(source).toLowerCase();
+            let t = expandAbbr(target).toLowerCase();
+
+            // 1. DICTIONARY CHECK
+            const dictList = JSON.parse(localStorage.getItem(KEY_DICTIONARY) || "[]");
+            for (const item of dictList) {
+                const mainTerm = item.main_term.toLowerCase();
+                // Check if target is the Main Term
+                if (t.includes(mainTerm) || mainTerm.includes(t)) {
+                    // Check if source matches any synonym
+                    if (item.synonyms.some(syn => s.includes(syn.toLowerCase()))) return 0.99;
+                }
+            }
+
+            // 2. FUZZY LOGIC
+            let cleanSource = s; let cleanTarget = t;
+            
+            if (cleanSource === cleanTarget) return 1.0;
+            
+            const coreSource = removeStopWords(cleanSource).replace(/[^a-z0-9]/g, '');
+            const coreTarget = removeStopWords(cleanTarget).replace(/[^a-z0-9]/g, '');
+            
+            const sCore = coreSource.length > 2 ? coreSource : cleanSource.replace(/[^a-z0-9]/g, '');
+            const tCore = coreTarget.length > 2 ? coreTarget : cleanTarget.replace(/[^a-z0-9]/g, '');
+
+            if (sCore === tCore) return 0.98;
+            if (sCore.includes(tCore) || tCore.includes(sCore)) return 0.90;
+
+            const distance = levenshtein(sCore, tCore);
+            const maxLength = Math.max(sCore.length, tCore.length);
+            if (maxLength === 0) return 0;
+            
+            return 1 - (distance / maxLength); 
+        }
+
+        function handleFileSelection(file) {
+             if (file) {
+                 cvState.uploadedFile = file;
+                 document.getElementById('file-display-name').textContent = file.name;
+                 document.getElementById('file-display-name').classList.add('text-primary-600', 'font-bold');
+             }
+        }
+
+        function triggerScan() {
+            if (!cvState.uploadedFile) {
+                showToast('error', 'Silakan upload file transkrip terlebih dahulu.');
+                return;
+            }
+            document.getElementById('konversi-input-container').classList.add('hidden');
+            const loadingRow = document.getElementById('konversi-loading-container');
+            loadingRow.classList.remove('hidden');
+            loadingRow.classList.add('flex');
+
+            processTranscript(cvState.uploadedFile);
+        }
+
+        function processTranscript(file) {
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setTimeout(() => {
+                    try {
+                        // FIX: Reset previous scan results to avoid conflicts
+                        cvState.selectedCourses = {};
+                        
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(firstSheet, {header:1}); 
+                        
+                        // Metadata Extraction
+                        let extractedName = "", extractedUniv = "", extractedEmail = "";
+
+                        for(let i=0; i<Math.min(json.length, 10); i++) {
+                            const row = json[i];
+                            const rowStr = JSON.stringify(row).toLowerCase();
+                            
+                            if (rowStr.includes("nama") && !extractedName) {
+                                const idx = row.findIndex(cell => String(cell).toLowerCase().includes("nama"));
+                                if (idx !== -1 && row[idx+1]) extractedName = String(row[idx+1]).replace(":", "").trim();
+                                else if (idx !== -1 && String(row[idx]).includes(":")) extractedName = String(row[idx]).split(":")[1].trim(); 
+                            }
+                            if ((rowStr.includes("universitas") || rowStr.includes("perguruan tinggi") || rowStr.includes("kampus")) && !extractedUniv) {
+                                const idx = row.findIndex(cell => String(cell).toLowerCase().includes("universitas") || String(cell).toLowerCase().includes("perguruan") || String(cell).toLowerCase().includes("kampus"));
+                                if (idx !== -1 && row[idx+1]) extractedUniv = String(row[idx+1]).replace(":", "").trim();
+                            }
+                            if (rowStr.includes("email") && !extractedEmail) {
+                                const idx = row.findIndex(cell => String(cell).toLowerCase().includes("email"));
+                                if (idx !== -1 && row[idx+1]) extractedEmail = String(row[idx+1]).replace(":", "").trim();
+                            }
+                        }
+
+                        if (extractedName) { cvState.studentName = extractedName; document.getElementById('display-cv-name').textContent = extractedName; }
+                        if (extractedUniv) { cvState.prevUniv = extractedUniv; document.getElementById('display-cv-univ').textContent = extractedUniv; }
+                        if (extractedEmail) { cvState.studentEmail = extractedEmail; document.getElementById('display-cv-email').textContent = extractedEmail; }
+                        document.getElementById('biodata-empty-state').classList.add('opacity-0', 'pointer-events-none');
+
+                        // Smart Excel Parsing
+                        const KEYWORDS = {
+                            code: ['kode', 'code', 'kd_mk', 'no_mk'],
+                            name: ['nama', 'mata kuliah', 'matakuliah', 'course', 'subject', 'mk'],
+                            sks: ['sks', 'kredit', 'credit', 'unit'],
+                            grade: ['nilai', 'grade', 'huruf', 'indeks', 'mutu']
+                        };
+
+                        let headerRowIdx = -1;
+                        let colMap = { name: -1, grade: -1, sks: -1, code: -1 };
+
+                        for (let i = 0; i < Math.min(json.length, 50); i++) {
+                            const row = json[i];
+                            if (!row) continue;
+                            row.forEach((cell, colIdx) => {
+                                if (!cell) return;
+                                const txt = String(cell).toLowerCase().trim();
+                                if (KEYWORDS.name.some(k => txt.includes(k))) colMap.name = colIdx;
+                                if (KEYWORDS.grade.some(k => txt.includes(k) || txt === 'hm' || txt === 'na')) colMap.grade = colIdx;
+                                if (KEYWORDS.sks.some(k => txt.includes(k))) colMap.sks = colIdx;
+                            });
+                            if (colMap.name !== -1 && (colMap.grade !== -1 || colMap.sks !== -1)) {
+                                headerRowIdx = i;
+                                break; 
+                            } else {
+                                colMap = { name: -1, grade: -1, sks: -1, code: -1 }; 
+                            }
+                        }
+
+                        const dataRows = json.slice(headerRowIdx + 1);
+                        cvState.rawTranscript = [];
+
+                        dataRows.forEach(row => {
+                            let name = (colMap.name !== -1 && row[colMap.name]) ? String(row[colMap.name]).trim() : "";
+                            let grade = (colMap.grade !== -1 && row[colMap.grade]) ? String(row[colMap.grade]).trim().toUpperCase() : "";
+                            let sks = (colMap.sks !== -1 && row[colMap.sks]) ? parseInt(row[colMap.sks]) : 0;
+
+                            if (sks === 0) {
+                                row.forEach(cell => {
+                                    const val = parseInt(cell);
+                                    if (!isNaN(val) && val > 0 && val < 10 && val !== sks) sks = val;
+                                });
+                            }
+
+                            if (name.length > 2 && !name.toLowerCase().includes("total")) {
+                                name = name.replace(/[^a-zA-Z0-9\s\(\)\-\.]/g, ""); 
+                                cvState.rawTranscript.push({name, grade, sks});
+                            }
+                        });
+
+                        const curriculum = transformCurriculum(cvState.currentProdi);
+                        const flatCourses = curriculum.flatMap(sem => sem.courses);
+                        
+                        // Get excluded/mandatory courses for this prodi
+                        const prodiData = JSON.parse(localStorage.getItem(KEY_PRODI)).find(p => p.nama === cvState.currentProdi);
+                        const excludedCourses = (prodiData && prodiData.params && prodiData.params.excludedCourses) ? prodiData.params.excludedCourses : [];
+
+                        let matchCount = 0;
+                        let matchedSources = new Set();
+                        let totalCredit = 0;
+
+                        flatCourses.forEach(target => {
+                            // SKIP IF MK WAJIB
+                            if(excludedCourses.includes(target.name)) return;
+
+                            let bestMatch = null, bestScore = 0;
+                            cvState.rawTranscript.forEach(src => {
+                                if(matchedSources.has(src.name)) return;
+                                const score = calculateSimilarity(src.name, target.name);
+                                if(score > 0.65 && score > bestScore) { bestScore = score; bestMatch = src; }
+                            });
+
+                            if(bestMatch && ['A','A-','B+','B','B-','C+','C'].includes(bestMatch.grade)) {
+                                cvState.selectedCourses[target.name] = { sks: target.sks, matchedName: bestMatch.name, grade: bestMatch.grade };
+                                matchedSources.add(bestMatch.name);
+                                matchCount++;
+                                totalCredit += target.sks;
+                            }
+                        });
+
+                        renderKonversiResults();
+                        
+                        document.getElementById('scan-result-sks').textContent = totalCredit;
+                        const resultModal = document.getElementById('scan-result-modal');
+                        resultModal.classList.remove('hidden');
+                        setTimeout(() => { if (!resultModal.classList.contains('hidden')) resultModal.classList.add('hidden'); }, 2500);
+                        
+                        showToast('success', `Berhasil mengekstrak data dan mencocokkan ${matchCount} mata kuliah.`);
+
+                    } catch (err) {
+                        console.error(err);
+                        showToast('error', "Gagal membaca file excel.");
+                    } finally {
+                        const loadingRow = document.getElementById('konversi-loading-container');
+                        loadingRow.classList.remove('flex');
+                        loadingRow.classList.add('hidden');
+                        document.getElementById('konversi-input-container').classList.remove('hidden');
+                    }
+                }, 1500); 
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderKonversiResults() {
+            const container = document.getElementById('course-list-container');
+            const semesterData = transformCurriculum(cvState.currentProdi);
+            
+            // Get current Prodi specific MK Wajib
+            const prodiList = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+            const prodiData = prodiList.find(p => p.nama === cvState.currentProdi);
+            const mandatoryCourses = (prodiData && prodiData.params && prodiData.params.excludedCourses) ? prodiData.params.excludedCourses : [];
+
+            if(semesterData.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">Belum ada data kurikulum untuk Prodi ini.<br>Silakan upload di menu Admin.</div>`;
+                updateKonversiSummary(0,0,0);
+                return;
+            }
+
+            container.innerHTML = semesterData.map(sem => {
+                const rows = sem.courses.map(c => {
+                    const match = cvState.selectedCourses[c.name];
+                    const isTaken = !!match;
+                    const isMandatory = mandatoryCourses.includes(c.name);
+                    
+                    let optionsHtml = `<option value="">-- Pilih Manual --</option>`;
+                    cvState.rawTranscript.forEach(src => {
+                         const selected = (match && match.matchedName === src.name) ? "selected" : "";
+                         optionsHtml += `<option value="${src.name}" ${selected}>${src.name} (${src.grade})</option>`;
+                    });
+
+                    // Styling logic for mandatory courses
+                    const rowClass = isMandatory 
+                        ? 'bg-rose-50 border-rose-200 opacity-80' 
+                        : (isTaken ? 'bg-green-50 border-green-200' : 'bg-white border-slate-100');
+                    
+                    const badge = isMandatory 
+                        ? `<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-rose-500 text-white shrink-0"><i class="ph-bold ph-lock-key"></i></div>` 
+                        : `<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isTaken ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'} shrink-0">${isTaken ? '<i class="ph-bold ph-check"></i>' : c.code.substring(0,2)}</div>`;
+
+                    const selectHtml = isMandatory 
+                        ? `<div class="text-xs font-bold text-rose-500 bg-rose-100 p-2 rounded border border-rose-200 text-center uppercase tracking-wide">Wajib Ambil (Tidak Bisa Konversi)</div>`
+                        : `<select onchange="manualMap('${c.name}', ${c.sks}, this.value)" class="w-full text-xs p-1.5 border rounded bg-white/50 focus:bg-white outline-none ${isTaken ? 'text-green-700 border-green-200' : 'text-slate-500 border-slate-200'}">${optionsHtml}</select>`;
+
+                    return `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between p-3 rounded-xl border ${rowClass} transition gap-4">
+                        <div class="flex items-center gap-3 flex-1">
+                            ${badge}
+                            <div class="w-full">
+                                <p class="text-sm font-bold text-slate-800">${c.name} <span class="text-xs font-normal text-slate-400">(${c.sks} SKS)</span></p>
+                                <div class="mt-1">
+                                    ${selectHtml}
+                                </div>
+                            </div>
+                        </div>
+                        ${isTaken && !isMandatory ? `<div class="text-right hidden md:block"><span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Diakui</span></div>` : ''}
+                    </div>`;
+                }).join('');
+
+                return `
+                <div class="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+                    <h4 class="text-xs font-black uppercase text-slate-400 mb-3 ml-1">Semester ${sem.semester}</h4>
+                    <div class="space-y-2">${rows}</div>
+                </div>`;
+            }).join('');
+
+            let totalWajib = 0;
+            semesterData.forEach(s => s.courses.forEach(c => totalWajib += c.sks));
+            let totalDiakui = 0;
+            Object.values(cvState.selectedCourses).forEach(m => totalDiakui += m.sks);
+            const sisa = totalWajib - totalDiakui;
+            let estSem = Math.ceil(sisa / 20); 
+            if(estSem < 0) estSem = 0;
+
+            updateKonversiSummary(totalWajib, totalDiakui, sisa, estSem);
+        }
+
+        function manualMap(targetName, sks, sourceName) {
+            if (!sourceName) {
+                delete cvState.selectedCourses[targetName];
+            } else {
+                const src = cvState.rawTranscript.find(x => x.name === sourceName);
+                if (src) {
+                    cvState.selectedCourses[targetName] = { sks: sks, matchedName: src.name, grade: src.grade };
+                }
+            }
+            renderKonversiResults();
+        }
+
+        function updateKonversiSummary(total, diakui, sisa, sem) {
+            document.getElementById('cv-summary-total').textContent = total;
+            document.getElementById('cv-summary-diakui').textContent = "-" + diakui;
+            document.getElementById('cv-summary-sisa').textContent = sisa;
+            document.getElementById('cv-summary-sem').textContent = sem || 0;
+            const diakuiDisplay = document.getElementById('cv-summary-diakui-display');
+            if(diakuiDisplay) diakuiDisplay.textContent = diakui;
+        }
+
+        function saveToKaprodi() {
+            if(!cvState.studentName) { showToast('error', 'Isi Nama Mahasiswa dulu.'); return; }
+            let total = 0; Object.values(cvState.selectedCourses).forEach(v => total += v.sks);
+            
+            const rec = { 
+                id: Date.now(), 
+                name: cvState.studentName, 
+                origin: cvState.prevUniv || "Umum", 
+                prodi: cvState.currentProdi, 
+                sks: total, 
+                status: 'pending', 
+                type: 'regular',
+                phone: cvState.studentPhone, 
+                duration: `${document.getElementById('cv-summary-sem').textContent} Sem`,
+                results: cvState.selectedCourses 
+            };
+            
+            const db = JSON.parse(localStorage.getItem(KEY_MHS) || "[]");
+            db.unshift(rec);
+            localStorage.setItem(KEY_MHS, JSON.stringify(db));
+            
+            showToast('success', 'Pengajuan berhasil dikirim ke Kaprodi!');
+            setTimeout(() => switchPage('hasil'), 1500);
+        }
+
+        function renderDashboard() {
+            const mhs = JSON.parse(localStorage.getItem(KEY_MHS) || "[]");
+            const prodiList = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+            
+            const approved = mhs.filter(x => x.status === 'approved');
+            const pending = mhs.filter(x => x.status === 'pending').length;
+            
+            let totalBill = 0;
+            approved.forEach(m => {
+                const p = prodiList.find(pr => pr.nama === m.prodi);
+                totalBill += p ? (p.registrationFee || 150000) : 150000;
+            });
+
+            document.getElementById('stat-total-conv').textContent = approved.length;
+            document.getElementById('stat-prodi').textContent = prodiList.length;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-bill').textContent = "Rp " + totalBill.toLocaleString('id-ID');
+            document.getElementById('display-balance').textContent = "Rp " + APP_STATE.saldo.toLocaleString('id-ID');
+            renderCharts();
+        }
+
+        function renderCharts() {
+            const ctxMain = document.getElementById('chart-main');
+            const ctxTrend = document.getElementById('chart-trend');
+            
+            if(ctxMain) {
+                if (APP_STATE.charts.main) APP_STATE.charts.main.destroy();
+                APP_STATE.charts.main = new Chart(ctxMain, { type: 'bar', data: { labels: ['Informatika', 'SI', 'Manajemen'], datasets: [{ label: 'Pendaftar', data: [12, 19, 8], backgroundColor: '#094E8B', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false} } } });
+            }
+
+            if(ctxTrend) {
+                if (APP_STATE.charts.trend) APP_STATE.charts.trend.destroy();
+                APP_STATE.charts.trend = new Chart(ctxTrend, { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'], datasets: [{ label: 'Pendaftaran', data: [5, 12, 19, 15, 25, 30], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display:false} } } });
+            }
+        }
+
+        function renderProdiTable() {
+            const tbody = document.getElementById('prodi-table-body');
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+            tbody.innerHTML = list.map((p, i) => {
+                const hasKurikulum = p.curriculumFile ? true : false;
+                const kuriBtnClass = hasKurikulum ? "p-2 bg-green-500 text-white rounded-lg shadow-sm hover:bg-green-600 hover:scale-105 transition" : "p-2 bg-green-50 text-green-600 rounded-lg shadow-sm hover:bg-green-100 hover:scale-105 transition";
+                const kuriTitle = hasKurikulum ? `Kurikulum Aktif (${p.curriculumFile})` : "Upload Kurikulum";
+                
+                return `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">${p.kode}</td>
+                    <td class="px-6 py-4 font-bold text-primary-900">${p.nama}</td>
+                    <td class="px-6 py-4 text-slate-500">${p.kaprodi}</td>
+                    <td class="px-6 py-4 font-bold text-primary-900 text-center">${p.strata}</td>
+                    <td class="px-6 py-4 text-xs font-medium text-slate-600">Rp ${(p.registrationFee || 0).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 font-black">Rp ${p.tuition.toLocaleString()}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="action-flex">
+                            <button onclick="openAkadSettings(${i})" class="p-2 bg-slate-50 text-primary-600 rounded-lg shadow-sm hover:bg-primary-50 hover:scale-105 transition" title="Aturan SKS & Konversi"><i class="ph-bold ph-gear-six"></i></button>
+                            <button onclick="openKurikulumModal(${i})" class="${kuriBtnClass}" title="${kuriTitle}"><i class="ph-bold ph-file-arrow-up"></i></button>
+                            <button onclick="openEditProdi(${i})" class="p-2 bg-blue-50 text-blue-600 rounded-lg shadow-sm hover:bg-blue-100 hover:scale-105 transition" title="Edit Prodi"><i class="ph-bold ph-pencil"></i></button>
+                            <button onclick="deleteProdi(${i})" class="p-2 bg-red-50 text-red-500 rounded-lg shadow-sm hover:bg-red-100 hover:scale-105 transition"><i class="ph-bold ph-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function openAddProdiModal() {
+            document.getElementById('in-prodi-idx').value = "";
+            document.getElementById('in-prodi-kode').value = "";
+            document.getElementById('in-prodi-nama').value = "";
+            document.getElementById('in-prodi-kaprodi').value = "";
+            document.getElementById('in-prodi-tuition').value = "";
+            document.getElementById('in-prodi-fee').value = "";
+            document.getElementById('prodi-modal').classList.remove('hidden');
+            clearSignature();
+            initSignaturePad();
+        }
+
+        function openEditProdi(index) {
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+            const p = list[index];
+            document.getElementById('in-prodi-idx').value = index;
+            document.getElementById('in-prodi-kode').value = p.kode;
+            document.getElementById('in-prodi-nama').value = p.nama;
+            document.getElementById('in-prodi-kaprodi').value = p.kaprodi;
+            document.getElementById('in-prodi-tuition').value = p.tuition;
+            document.getElementById('in-prodi-fee').value = p.registrationFee || 0;
+            document.getElementById('in-prodi-strata').value = p.strata;
+            document.getElementById('prodi-modal').classList.remove('hidden');
+            initSignaturePad();
+            setTimeout(() => {
+                if(p.signature) loadSignatureData(p.signature);
+                else clearSignature();
+            }, 100);
+        }
+
+        function saveProdiData() {
+            setLoading('btn-save-prodi', true);
+            setTimeout(() => {
+                const idx = document.getElementById('in-prodi-idx').value;
+                const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+                
+                let existingData = null;
+                if (idx !== "") { existingData = list[idx]; }
+
+                const sigData = getSignatureData();
+
+                const newData = {
+                    kode: document.getElementById('in-prodi-kode').value,
+                    nama: document.getElementById('in-prodi-nama').value,
+                    kaprodi: document.getElementById('in-prodi-kaprodi').value,
+                    strata: document.getElementById('in-prodi-strata').value,
+                    tuition: parseInt(document.getElementById('in-prodi-tuition').value) || 0,
+                    registrationFee: parseInt(document.getElementById('in-prodi-fee').value) || 0,
+                    rules: existingData ? existingData.rules : [], 
+                    params: existingData ? (existingData.params || {}) : { maxSks: 144, maxYear: 7, minAccreditation: "B", originTypes: ["Pindahan Antar PT"], maxConvertSksPercent: 70, minGrade: "C", minGpa: 2.75, excludedCourses: ["Skripsi / Tugas Akhir"] },
+                    curriculumFile: existingData ? existingData.curriculumFile : null,
+                    curriculumData: existingData ? existingData.curriculumData : null,
+                    signature: sigData
+                };
+
+                if (idx !== "") {
+                    list[idx] = newData; 
+                } else {
+                    list.push(newData);
+                }
+
+                localStorage.setItem(KEY_PRODI, JSON.stringify(list));
+                setLoading('btn-save-prodi', false);
+                closeAddProdiModal();
+                renderProdiTable();
+                showToast("success", "Data program studi berhasil disimpan.");
+            }, 800);
+        }
+
+        function deleteProdi(index) {
+            if(confirm("Apakah Anda yakin ingin menghapus Prodi ini? Data tidak bisa dikembalikan.")) {
+                const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+                list.splice(index, 1);
+                localStorage.setItem(KEY_PRODI, JSON.stringify(list));
+                renderProdiTable();
+                showToast("success", "Program studi berhasil dihapus.");
+            }
+        }
+        function closeAddProdiModal() { document.getElementById('prodi-modal').classList.add('hidden'); }
+
+        function openKurikulumModal(index) {
+            APP_STATE.active_kurikulum_idx = index;
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+            const p = list[index];
+            document.getElementById('kuri-prodi-name').textContent = p.nama;
+            document.getElementById('kuri-file-name').textContent = p.curriculumFile || "";
+            document.getElementById('kuri-file-input').value = ""; 
+            document.getElementById('kurikulum-modal').classList.remove('hidden');
+        }
+
+        function saveKurikulum() {
+            setLoading('btn-save-kurikulum', true);
+            const fileInput = document.getElementById('kuri-file-input');
+            if (fileInput.files.length === 0) {
+                const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+                if(list[APP_STATE.active_kurikulum_idx].curriculumFile) {
+                    setLoading('btn-save-kurikulum', false); document.getElementById('kurikulum-modal').classList.add('hidden'); return;
+                }
+                setLoading('btn-save-kurikulum', false); showToast('error', 'Silakan pilih file kurikulum terlebih dahulu.'); return;
+            }
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    const processedData = jsonData.map(row => {
+                        let newRow = {...row};
+                        Object.keys(row).forEach(key => {
+                            if(key.toLowerCase().includes('tipe') || key.toLowerCase().includes('jenis') || key.toLowerCase().includes('wajib')) {
+                                newRow['type'] = row[key]; 
+                            }
+                        });
+                        return newRow;
+                    });
+                    
+                    setTimeout(() => {
+                        const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+                        list[APP_STATE.active_kurikulum_idx].curriculumFile = file.name;
+                        list[APP_STATE.active_kurikulum_idx].curriculumData = processedData; 
+                        
+                        localStorage.setItem(KEY_PRODI, JSON.stringify(list));
+                        setLoading('btn-save-kurikulum', false); 
+                        document.getElementById('kurikulum-modal').classList.add('hidden'); 
+                        renderProdiTable(); 
+                        showToast('success', `Kurikulum berhasil diunggah (${jsonData.length} MK).`);
+                    }, 1000);
+                } catch (err) {
+                    setLoading('btn-save-kurikulum', false);
+                    showToast('error', 'Gagal membaca file Excel. Pastikan format benar.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function downloadCurriculumTemplate() {
+            const wb = XLSX.utils.book_new();
+            const ws_data = [
+                ["KODE", "NAMA", "SKS", "SEMESTER", "TIPE"],
+                ["SI101", "Algoritma Pemrograman", 3, 1, "Wajib"],
+                ["SI102", "Basis Data", 4, 2, "Wajib"],
+                ["SI201", "Struktur Data", 3, 2, "Wajib"],
+                ["SI500", "Skripsi", 6, 8, "Wajib"]
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, "Template_Kurikulum");
+            XLSX.writeFile(wb, "template_kurikulum_konverpro.xlsx");
+            showToast('success', 'Template Excel berhasil diunduh.');
+        }
+
+        function downloadTranscriptTemplate() {
+            const wb = XLSX.utils.book_new();
+            const ws_data = [
+                ["DATA MAHASISWA", ""],
+                ["Nama Mahasiswa", "Budi Santoso"],
+                ["Asal Perguruan Tinggi", "Politeknik Negeri Jakarta"],
+                ["Email", "budi@example.com"],
+                [],
+                ["NO", "KODE_MK", "NAMA_MATAKULIAH", "SKS", "NILAI"],
+                [1, "COMP101", "Algoritma dan Pemrograman", 3, "A"], 
+                [2, "GEN102", "Bahasa Inggris 1", 2, "B"], 
+                [3, "BUS101", "Pengantar Manajemen", 2, "A"], 
+                [4, "GEN101", "Pendidikan Pancasila", 2, "A"], 
+                [5, "MATH101", "Matematika Diskrit", 3, "B+"], 
+                [6, "COMP201", "Sistem Basis Data", 4, "A"], 
+                [7, "COMP202", "Jaringan Komputer", 3, "B"], 
+                [8, "STAT101", "Statistika dan Probabilitas", 3, "A"], 
+                [9, "COMP301", "Pemrograman Berbasis Web", 4, "A"], 
+                [10, "GEN301", "Etika Profesi", 2, "A"] 
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            ws['!cols'] = [{wch:20}, {wch:15}, {wch:40}, {wch:10}, {wch:10}];
+            XLSX.utils.book_append_sheet(wb, ws, "Template_Transkrip");
+            XLSX.writeFile(wb, "Template_Transkrip_Mahasiswa.xlsx");
+            showToast('success', 'Template Transkrip berhasil diunduh.');
+        }
+
+        function openAkadSettings(index) {
+            APP_STATE.active_akad_idx = index;
+            const prodi = JSON.parse(localStorage.getItem(KEY_PRODI))[index];
+            const params = prodi.params || {};
+            document.getElementById('settings-prodi-title').textContent = prodi.nama;
+            document.getElementById('set-min-accreditation').value = params.minAccreditation || "B";
+            document.getElementById('set-max-sks-percent').value = params.maxConvertSksPercent || 70;
+            document.getElementById('set-min-grade').value = params.minGrade || "C";
+            document.getElementById('set-min-gpa').value = params.minGpa || 2.75;
+            document.getElementById('set-max-year').value = params.maxYear || 7;
+            document.getElementById('set-letter-format').value = params.letterFormat || "BA/{YEAR}/{NO}/{PRODI}";
+            const origins = ["Pindahan Antar PT", "Alih Jenjang D3 ke S1", "Alih Jenjang D1/D2", "Rekognisi Pembelajaran Lampau (RPL)"];
+            const savedOrigins = params.originTypes || [];
+            APP_STATE.tempSettings.originTypes = [...savedOrigins];
+            document.getElementById('origin-type-container').innerHTML = origins.map(o => `<label class="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition border border-transparent hover:border-slate-100"><input type="checkbox" ${savedOrigins.includes(o) ? 'checked' : ''} onchange="toggleOriginType('${o}')" class="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 border-slate-300"><span class="text-xs font-bold text-slate-600">${o}</span></label>`).join('');
+            APP_STATE.tempSettings.excludedCourses = [...(params.excludedCourses || [])];
+            renderTags();
+            renderSksListNew();
+            switchPage('akad-settings');
+        }
+
+        function importWajibFromCurriculum() {
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI));
+            const prodi = list[APP_STATE.active_akad_idx];
+            
+            if(!prodi.curriculumData || prodi.curriculumData.length === 0) {
+                showToast('error', 'Belum ada kurikulum yang diupload untuk prodi ini.');
+                return;
+            }
+
+            let addedCount = 0;
+            prodi.curriculumData.forEach(row => {
+                let type = "";
+                let name = "";
+                
+                Object.keys(row).forEach(k => {
+                    const val = String(row[k]).toLowerCase();
+                    const key = k.toLowerCase();
+                    if(key.includes('tipe') || key.includes('jenis') || key.includes('wajib') || key === 'type') type = val;
+                    if(key.includes('nama') || key.includes('mata')) name = row[k];
+                });
+
+                if(type.includes('wajib') && name) {
+                    if(!APP_STATE.tempSettings.excludedCourses.includes(name)) {
+                        APP_STATE.tempSettings.excludedCourses.push(name);
+                        addedCount++;
+                    }
+                }
+            });
+
+            renderTags();
+            if(addedCount > 0) {
+                showToast('success', `${addedCount} Mata Kuliah Wajib berhasil ditarik.`);
+            } else {
+                showToast('info', 'Tidak ditemukan MK Wajib baru atau kurikulum belum ditandai.');
+            }
+        }
+
+        function renderTags() {
+            const wrapper = document.getElementById('tag-input-wrapper');
+            const inputField = document.getElementById('tag-input-field');
+            wrapper.querySelectorAll('.tag-item').forEach(el => el.remove());
+            APP_STATE.tempSettings.excludedCourses.forEach(course => {
+                const tag = document.createElement('div');
+                tag.className = 'tag-item bg-primary-50 text-primary-700 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold animate-modal';
+                tag.innerHTML = `${course}<button onclick="removeTag('${course}')" class="hover:text-red-500 transition-colors bg-white rounded-full w-4 h-4 flex items-center justify-center shadow-sm"><i class="ph-bold ph-x text-[10px]"></i></button>`;
+                wrapper.insertBefore(tag, inputField);
+            });
+            inputField.value = ''; document.getElementById('tag-suggestions').classList.add('hidden');
+        }
+
+        document.getElementById('tag-input-field').addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase();
+            const suggestionsEl = document.getElementById('tag-suggestions');
+            if (val.length === 0) { suggestionsEl.classList.add('hidden'); return; }
+            const matches = COMMON_COURSES.filter(c => c.toLowerCase().includes(val) && !APP_STATE.tempSettings.excludedCourses.includes(c));
+            if (matches.length > 0) { suggestionsEl.innerHTML = matches.map(c => `<div onclick="addTag('${c}')" class="p-3 hover:bg-primary-50 hover:text-primary-700 cursor-pointer text-xs font-bold text-slate-600 rounded-lg transition-colors">${c}</div>`).join(''); suggestionsEl.classList.remove('hidden'); } else { suggestionsEl.innerHTML = `<div class="p-3 text-xs text-slate-400 italic text-center">Tidak ditemukan. Tekan enter untuk tambah manual.</div>`; suggestionsEl.classList.remove('hidden'); }
+        });
+        document.getElementById('tag-input-field').addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); const val = this.value.trim(); if (val && !APP_STATE.tempSettings.excludedCourses.includes(val)) addTag(val); } if (e.key === 'Backspace' && this.value === '' && APP_STATE.tempSettings.excludedCourses.length > 0) removeTag(APP_STATE.tempSettings.excludedCourses[APP_STATE.tempSettings.excludedCourses.length - 1]); });
+        function addTag(course) { APP_STATE.tempSettings.excludedCourses.push(course); renderTags(); document.getElementById('tag-input-field').focus(); }
+        function removeTag(course) { APP_STATE.tempSettings.excludedCourses = APP_STATE.tempSettings.excludedCourses.filter(c => c !== course); renderTags(); }
+        function toggleOriginType(val) { const arr = APP_STATE.tempSettings.originTypes; arr.includes(val) ? APP_STATE.tempSettings.originTypes = arr.filter(x => x !== val) : arr.push(val); }
+
+        function renderSksListNew() {
+            const prodi = JSON.parse(localStorage.getItem(KEY_PRODI))[APP_STATE.active_akad_idx];
+            const container = document.getElementById('sks-list-container-new');
+            const rules = prodi.rules || [];
+            rules.sort((a, b) => a.sem - b.sem);
+            if(rules.length === 0) { container.innerHTML = `<p class="text-[10px] text-slate-400 italic text-center py-4">Belum ada aturan semester.</p>`; return; }
+            container.innerHTML = rules.map((r, i) => `<div class="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-100"><div class="w-24 text-[10px] font-black uppercase text-slate-400">Semester ${r.sem}</div><div class="flex-1 flex items-center gap-3"><input type="number" onchange="updateSksVal(${i}, this.value)" value="${r.sks}" class="w-full bg-white border border-slate-200 rounded-lg p-2 font-black text-center text-sm outline-none focus:border-primary-500"> <span class="text-[10px] font-bold text-slate-400">SKS</span></div><button onclick="removeSksRow(${i})" class="text-red-300 hover:text-red-500 transition-colors"><i class="ph-bold ph-trash-simple text-xl"></i></button></div>`).join('');
+        }
+
+        function applyAutoSks() {
+            const startSem = parseInt(document.getElementById('auto-sks-start').value); const sksVal = parseInt(document.getElementById('auto-sks-val').value);
+            if (!startSem || !sksVal || startSem < 1) { showToast('error', 'Masukkan Semester Awal dan Nilai SKS yang valid.'); return; }
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI)); let rules = list[APP_STATE.active_akad_idx].rules || [];
+            for(let s = startSem; s <= 8; s++) { const existingIdx = rules.findIndex(r => r.sem === s); if (existingIdx !== -1) { rules[existingIdx].sks = sksVal; } else { rules.push({ sem: s, sks: sksVal }); } }
+            list[APP_STATE.active_akad_idx].rules = rules; localStorage.setItem(KEY_PRODI, JSON.stringify(list)); renderSksListNew(); showToast('success', `SKS Semester ${startSem}-8 berhasil diisi otomatis.`);
+        }
+        function addSksRowNew() { 
+            const list = JSON.parse(localStorage.getItem(KEY_PRODI)); 
+            if(!list[APP_STATE.active_akad_idx].rules) list[APP_STATE.active_akad_idx].rules = [];
+            const currentRules = list[APP_STATE.active_akad_idx].rules; 
+            const nextSem = currentRules.length > 0 ? Math.max(...currentRules.map(r => r.sem)) + 1 : 1; 
+            list[APP_STATE.active_akad_idx].rules.push({ sem: nextSem, sks: 20 }); 
+            localStorage.setItem(KEY_PRODI, JSON.stringify(list)); renderSksListNew(); 
+        }
+        function removeSksRow(i) { const list = JSON.parse(localStorage.getItem(KEY_PRODI)); list[APP_STATE.active_akad_idx].rules.splice(i, 1); localStorage.setItem(KEY_PRODI, JSON.stringify(list)); renderSksListNew(); }
+        function updateSksVal(i, val) { const list = JSON.parse(localStorage.getItem(KEY_PRODI)); list[APP_STATE.active_akad_idx].rules[i].sks = parseInt(val); localStorage.setItem(KEY_PRODI, JSON.stringify(list)); }
+
+        function saveAkadSettings() {
+            setLoading('btn-save-akad', true);
+            setTimeout(() => {
+                const list = JSON.parse(localStorage.getItem(KEY_PRODI)); const p = list[APP_STATE.active_akad_idx];
+                p.params = { maxSks: 144, maxYear: parseInt(document.getElementById('set-max-year').value) || 7, minAccreditation: document.getElementById('set-min-accreditation').value, maxConvertSksPercent: parseInt(document.getElementById('set-max-sks-percent').value) || 0, minGrade: document.getElementById('set-min-grade').value, minGpa: parseFloat(document.getElementById('set-min-gpa').value) || 0, originTypes: APP_STATE.tempSettings.originTypes, excludedCourses: APP_STATE.tempSettings.excludedCourses, letterFormat: document.getElementById('set-letter-format').value };
+                localStorage.setItem(KEY_PRODI, JSON.stringify(list)); setLoading('btn-save-akad', false); showToast("success", "Pengaturan akademik berhasil disimpan."); setTimeout(() => { switchPage('pengaturan'); switchSettingsTab('prodi'); }, 800);
+            }, 800);
+        }
+
+        function openValidationModal(id) { APP_STATE.pendingApprovalId = id; const mhs = JSON.parse(localStorage.getItem(KEY_MHS)).find(x => x.id === id); if(!mhs) return; document.getElementById('val-mhs-name').textContent = mhs.name; document.getElementById('val-mhs-id').value = id; document.getElementById('btn-val-approve').classList.remove('bg-green-50', 'ring-2'); document.getElementById('btn-val-revisi').classList.remove('bg-yellow-50', 'ring-2'); document.getElementById('btn-val-tolak').classList.remove('bg-red-50', 'ring-2'); document.getElementById('val-reason-container').classList.add('hidden'); document.getElementById('validation-modal').classList.remove('hidden'); }
+        function closeValidationModal() { document.getElementById('validation-modal').classList.add('hidden'); }
+        function setValidationStatus(status) { document.getElementById('val-selected-status').value = status; const btnApprove = document.getElementById('btn-val-approve'); const btnRevisi = document.getElementById('btn-val-revisi'); const btnTolak = document.getElementById('btn-val-tolak'); btnApprove.classList.remove('bg-green-50', 'ring-2'); btnRevisi.classList.remove('bg-yellow-50', 'ring-2'); btnTolak.classList.remove('bg-red-50', 'ring-2'); if(status === 'approved') btnApprove.classList.add('bg-green-50', 'ring-2'); if(status === 'revisi') btnRevisi.classList.add('bg-yellow-50', 'ring-2'); if(status === 'ditolak') btnTolak.classList.add('bg-red-50', 'ring-2'); if(status === 'revisi' || status === 'ditolak') { document.getElementById('val-reason-container').classList.remove('hidden'); } else { document.getElementById('val-reason-container').classList.add('hidden'); } }
+        
+        function submitValidation() { 
+            const id = APP_STATE.pendingApprovalId; 
+            const status = document.getElementById('val-selected-status').value; 
+            const reason = document.getElementById('val-reason').value; 
+            if(!status) { showToast('error', 'Pilih keputusan validasi.'); return; } 
+            
+            const list = JSON.parse(localStorage.getItem(KEY_MHS)); 
+            const idx = list.findIndex(x => x.id === id); 
+            if(idx !== -1) { 
+                if (status === 'approved' && list[idx].status !== 'approved') {
+                    const prodiList = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+                    const p = prodiList.find(pr => pr.nama === list[idx].prodi);
+                    const cost = p ? (p.registrationFee || 150000) : 150000;
+
+                    if (APP_STATE.saldo < cost) {
+                        showToast('error', `Saldo tidak mencukupi (Butuh Rp ${cost.toLocaleString('id-ID')}). Silakan Top Up.`);
+                        return;
+                    }
+                    
+                    APP_STATE.saldo -= cost;
+                    saveAppState();
+                }
+
+                list[idx].status = status; 
+                list[idx].reason = reason; 
+                localStorage.setItem(KEY_MHS, JSON.stringify(list)); 
+                renderHasilTable(); 
+                renderDashboard(); 
+                if(!document.getElementById('set-content-billing').classList.contains('hidden')) renderBillingData();
+                closeValidationModal(); 
+                showToast('success', `Status mahasiswa diperbarui menjadi ${status}.`); 
+            } 
+        }
+        
+        function deleteMhs(id) {
+            openConfirmationModal(
+                "Hapus Data Mahasiswa?",
+                "Data hasil konversi dan riwayat mahasiswa ini akan dihapus.",
+                () => {
+                    let list = JSON.parse(localStorage.getItem(KEY_MHS));
+                    list = list.filter(x => x.id !== id);
+                    localStorage.setItem(KEY_MHS, JSON.stringify(list));
+                    renderHasilTable();
+                    renderDashboard();
+                    if(!document.getElementById('set-content-billing').classList.contains('hidden')) renderBillingData();
+                    showToast('success', 'Data mahasiswa dihapus.');
+                }
+            );
+        }
+        
+        function goToEditKonversi(id) { switchPage('konversi'); }
+        
+        function viewConversionResult(id) { 
+            const mhs = JSON.parse(localStorage.getItem(KEY_MHS)).find(x => x.id === id); 
+            if(!mhs) return; 
+            document.getElementById('cv-student-name').textContent = `Mahasiswa: ${mhs.name}`; 
+            document.getElementById('cv-sks-diakui').textContent = mhs.sks; 
+            
+            let coursesDiakui = [];
+            let coursesAmbil = [];
+
+            if (mhs.results) {
+                coursesDiakui = Object.keys(mhs.results).map(key => {
+                    const match = mhs.results[key];
+                    return {
+                        code: '-', 
+                        name: key,
+                        sks: match.sks,
+                        grade: match.grade || 'A' 
+                    };
+                });
+
+                const curriculum = transformCurriculum(mhs.prodi);
+                const flatCurriculum = curriculum.flatMap(s => s.courses.map(c => ({...c, semester: s.semester})));
+                coursesAmbil = flatCurriculum
+                    .filter(c => !mhs.results[c.name])
+                    .map(c => ({
+                        code: c.code || '-',
+                        name: c.name,
+                        sks: c.sks,
+                        sem: c.semester
+                    }));
+
+            } else {
+                coursesDiakui = [];
+                coursesAmbil = [];
+            }
+
+            const tableDiakui = document.getElementById('cv-table-diakui'); 
+            const tableAmbil = document.getElementById('cv-table-ambil'); 
+            
+            if (coursesDiakui.length === 0) {
+                tableDiakui.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Tidak ada mata kuliah diakui.</td></tr>`;
+            } else {
+                tableDiakui.innerHTML = coursesDiakui.map(c => `<tr class="border-b border-slate-50"><td class="p-3 font-mono">${c.code}</td><td class="p-3 font-bold text-slate-700">${c.name}</td><td class="p-3 text-center">${c.sks}</td><td class="p-3 text-center font-bold text-green-600">${c.grade}</td></tr>`).join(''); 
+            }
+
+            if (coursesAmbil.length === 0) {
+                tableAmbil.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400 italic">Semua mata kuliah terpenuhi.</td></tr>`;
+            } else {
+                tableAmbil.innerHTML = coursesAmbil.map(c => `<tr class="border-b border-slate-50"><td class="p-3 font-mono">${c.code}</td><td class="p-3 font-bold text-slate-700">${c.name}</td><td class="p-3 text-center">${c.sks}</td><td class="p-3 text-center font-bold text-slate-500">${c.sem}</td></tr>`).join(''); 
+            }
+            
+            document.getElementById('conversion-view-modal').classList.remove('hidden'); 
+        }
+
+        function renderHasilTable() {
+            const tbody = document.getElementById('hasil-table-body');
+            const list = JSON.parse(localStorage.getItem(KEY_MHS) || "[]");
+            
+            const filtered = list.sort((a, b) => b.id - a.id);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = "";
+                document.getElementById('hasil-empty').classList.remove('hidden');
+                return;
+            }
+            
+            document.getElementById('hasil-empty').classList.add('hidden');
+            
+            const isLowBalance = APP_STATE.saldo < 150000;
+            
+            tbody.innerHTML = filtered.map(item => {
+                const isLocked = item.status === 'pending' && isLowBalance;
+                let nameHtml = item.name;
+                let prodiHtml = item.prodi;
+                let actionButtons = '';
+                const origin = item.origin || "Universitas Asal";
+                const duration = item.duration || "4 Sem";
+
+                if (isLocked) {
+                    nameHtml = `<span class="locked-blur">${item.name}</span> <i class="ph-bold ph-lock-key text-red-400 ml-2"></i>`;
+                    prodiHtml = `<span class="locked-blur">${item.prodi}</span>`;
+                    actionButtons = `<button onclick="showToast('error', 'Saldo tidak mencukupi.')" class="px-4 py-2 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-bold cursor-not-allowed flex items-center gap-1"><i class="ph-bold ph-lock-key"></i> Terkunci</button>`;
+                } else {
+                    const printBtn = item.status === 'approved' ? `<button onclick="openBA(${item.id})" class="p-2 bg-purple-50 text-purple-600 rounded-lg shadow-sm hover:bg-purple-100 transition" title="Cetak BA"><i class="ph-bold ph-printer"></i></button>` : '';
+                    const validateBtn = item.status === 'pending' 
+                        ? `<button onclick="openValidationModal(${item.id})" class="px-4 py-1.5 bg-primary-900 text-white rounded-lg text-[10px] font-black uppercase shadow-sm hover:bg-primary-700 transition flex items-center gap-1"><i class="ph-bold ph-gavel"></i> Validasi</button>` 
+                        : `<button onclick="openValidationModal(${item.id})" class="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition" title="Ubah Status"><i class="ph-bold ph-pencil-line"></i></button>`;
+                    
+                    actionButtons = `
+                        ${validateBtn} ${printBtn} 
+                        <button onclick="document.getElementById('doc-preview-modal').classList.remove('hidden')" class="p-2 bg-green-50 text-green-600 rounded-lg shadow-sm hover:bg-green-100 transition" title="Lihat Transkrip Asal"><i class="ph-bold ph-file-text"></i></button> 
+                        <button onclick="viewConversionResult(${item.id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg shadow-sm hover:bg-blue-100 transition" title="Lihat Hasil Konversi"><i class="ph-bold ph-eye"></i></button> 
+                        <button onclick="goToEditKonversi(${item.id})" class="p-2 bg-amber-50 text-amber-600 rounded-lg shadow-sm hover:bg-amber-100 transition" title="Edit Konversi"><i class="ph-bold ph-pencil-simple"></i></button> 
+                        <button onclick="deleteMhs(${item.id})" class="p-2 bg-red-50 text-red-500 rounded-lg shadow-sm hover:bg-red-100 transition"><i class="ph-bold ph-trash"></i></button>
+                    `;
+                }
+
+                let statusClass = 'bg-orange-100 text-orange-700';
+                if (item.status === 'approved') statusClass = 'bg-green-100 text-green-700';
+                if (item.status === 'revisi') statusClass = 'bg-yellow-100 text-yellow-700';
+                if (item.status === 'ditolak') statusClass = 'bg-red-100 text-red-700';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition text-primary-900">
+                        <td class="px-6 py-4 font-bold">
+                            ${nameHtml}
+                            <div class="text-[10px] text-slate-400 font-normal mt-0.5">${new Date(item.id).toLocaleDateString('id-ID')}</div>
+                        </td>
+                        <td class="px-6 py-4 font-medium text-slate-600">${origin}</td>
+                        <td class="px-6 py-4 text-[10px] font-black uppercase text-slate-400">${prodiHtml}</td>
+                        <td class="px-6 py-4 font-black text-center">${item.sks}</td>
+                        <td class="px-6 py-4 text-center font-bold text-slate-600">${duration}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase ${statusClass}">${item.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 items-center">${actionButtons}</div>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function switchSettingsTab(tab) { 
+            ['identitas', 'prodi', 'kamus', 'billing', 'info'].forEach(t => { 
+                const el = document.getElementById('set-content-' + t); 
+                const btn = document.getElementById('set-tab-' + t); 
+                if(el) el.classList.toggle('hidden', t !== tab); 
+                if(btn) { 
+                    if(t === tab) { btn.classList.add('active'); } else { btn.classList.remove('active'); } 
+                } 
+            }); 
+            if(tab === 'identitas') loadCampusForm(); 
+            if(tab === 'prodi') renderProdiTable(); 
+            if(tab === 'kamus') renderDictionaryTable();
+            if(tab === 'billing') renderBillingData(); 
+        }
+
+        function handleLogoPreview(e) { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = function(ev) { APP_STATE.campus_logo = ev.target.result; updateLogoDisplays(APP_STATE.campus_logo); }; reader.readAsDataURL(file); } }
+        function updateLogoDisplays(src) { const img = document.getElementById('logo-preview-img'); const ph = document.getElementById('logo-preview-placeholder'); if(img && ph) { img.src = src; img.classList.remove('hidden'); ph.classList.add('hidden'); } const navImg = document.getElementById('custom-logo-nav'); const navIcon = document.getElementById('default-logo-icon'); if(navImg && navIcon) { navImg.src = src; navImg.classList.remove('hidden'); navIcon.classList.add('hidden'); } }
+        function loadCampusForm() { const d = JSON.parse(localStorage.getItem(KEY_CAMPUS) || "{}"); if(d.name) { if(document.getElementById('cp-in-name')) document.getElementById('cp-in-name').value = d.name; if(document.getElementById('cp-in-rektor')) document.getElementById('cp-in-rektor').value = d.rektor; if(document.getElementById('cp-in-address')) document.getElementById('cp-in-address').value = d.address; if(document.getElementById('cp-in-email')) document.getElementById('cp-in-email').value = d.email; if(document.getElementById('cp-in-phone')) document.getElementById('cp-in-phone').value = d.phone; if(document.getElementById('cp-in-web')) document.getElementById('cp-in-web').value = d.web; if(document.getElementById('brand-name-nav')) document.getElementById('brand-name-nav').textContent = d.name; if(d.logo) updateLogoDisplays(d.logo); } }
+        function saveCampusData() { const data = { name: document.getElementById('cp-in-name').value, rektor: document.getElementById('cp-in-rektor').value, address: document.getElementById('cp-in-address').value, email: document.getElementById('cp-in-email').value, phone: document.getElementById('cp-in-phone').value, web: document.getElementById('cp-in-web').value, logo: APP_STATE.campus_logo }; localStorage.setItem(KEY_CAMPUS, JSON.stringify(data)); document.getElementById('brand-name-nav').textContent = data.name; showToast("success", "Profil institusi diperbarui."); }
+        function openTopUpModal() { document.getElementById('topup-step-1').classList.remove('hidden'); document.getElementById('topup-step-2').classList.add('hidden'); document.getElementById('topup-modal').classList.remove('hidden'); }
+        function closeTopUpModal() { document.getElementById('topup-modal').classList.add('hidden'); }
+        function selectTopUpAmount(amt) { document.getElementById('input-topup-custom').value = amt; }
+        function proceedToPayment() { const val = parseInt(document.getElementById('input-topup-custom').value); if(!val) return; APP_STATE.pendingTopUp = val; document.getElementById('payment-display-amount').textContent = "Rp " + val.toLocaleString('id-ID'); document.getElementById('topup-step-1').classList.add('hidden'); document.getElementById('topup-step-2').classList.remove('hidden'); }
+        function backToStep1() { document.getElementById('topup-step-2').classList.add('hidden'); document.getElementById('topup-step-1').classList.remove('hidden'); }
+        function confirmTopUp() { APP_STATE.saldo += APP_STATE.pendingTopUp; saveAppState(); renderDashboard(); if(!document.getElementById('set-content-billing').classList.contains('hidden')) renderBillingData(); closeTopUpModal(); showToast("success", "Top Up berhasil."); }
+        
+        function simulateIncomingLead() { 
+            const c = JSON.parse(localStorage.getItem(KEY_CAMPUS)); 
+            const cost = 350000; 
+            
+            if(APP_STATE.saldo < cost) {
+                showToast("error", "Saldo tidak mencukupi untuk menerima Lead.");
+                return;
+            }
+
+            APP_STATE.saldo -= cost; 
+            saveAppState(); 
+
+            const baseSks = Math.floor(Math.random() * 50) + 20; 
+            const sks = Math.min(baseSks + 15, 140); 
+            const nameSuffix = ' (Lead)'; 
+            const l = JSON.parse(localStorage.getItem(KEY_MHS)); 
+            l.unshift({ id: Date.now(), name: 'Pendaftar #' + Math.floor(1000 + Math.random()*9000) + nameSuffix, origin: 'Universitas Terbuka', duration: '3 Sem', prodi: 'Informatika', sks: sks, status: 'pending', type: 'leads', reason: '' }); 
+            localStorage.setItem(KEY_MHS, JSON.stringify(l)); 
+            renderDashboard(); 
+            if(!document.getElementById('page-hasil').classList.contains('hidden')) { renderHasilTable(); } 
+            if(!document.getElementById('set-content-billing').classList.contains('hidden')) { renderBillingData(); } 
+            showToast("success", "Lead baru diterima! (-Rp " + cost.toLocaleString() + ")"); 
+        }
+        
+        function openBA(id) { 
+            const mhs = JSON.parse(localStorage.getItem(KEY_MHS)).find(x => x.id === id); 
+            const campus = JSON.parse(localStorage.getItem(KEY_CAMPUS)); 
+            const prodiList = JSON.parse(localStorage.getItem(KEY_PRODI)); 
+            const prodi = prodiList.find(p => p.nama.toLowerCase().includes(mhs.prodi.toLowerCase())) || prodiList[0]; 
+            const dateNow = new Date(); 
+            const dateString = dateNow.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }); 
+            const logoHtml = campus.logo ? `<img src="${campus.logo}" style="width: 60px; height: 60px; object-fit: contain; border-radius: 8px;">` : `<div style="width: 60px; height: 60px; background: #094E8B; color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; border-radius: 8px; font-size: 20px;">KP</div>`; 
+            let letterNo = prodi.params?.letterFormat || "BA/{YEAR}/{NO}/{PRODI}"; 
+            letterNo = letterNo.replace("{YEAR}", dateNow.getFullYear()); 
+            letterNo = letterNo.replace("{NO}", Math.floor(1000 + Math.random() * 9000)); 
+            letterNo = letterNo.replace("{PRODI}", prodi.kode); 
+            
+            // --- GENERATE COURSE LIST PER SEMESTER ---
+            const curriculum = transformCurriculum(mhs.prodi);
+            let semesterTables = '';
+            
+            curriculum.forEach(sem => {
+                // Filter courses that are NOT in the conversion results (must be taken)
+                const remainingCourses = sem.courses.filter(c => !mhs.results || !mhs.results[c.name]);
+                
+                if (remainingCourses.length > 0) {
+                    let totalSksSem = 0;
+                    const rows = remainingCourses.map((c, idx) => {
+                        totalSksSem += c.sks;
+                        return `
+                        <tr>
+                            <td style="padding: 4px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9pt;">${idx + 1}</td>
+                            <td style="padding: 4px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9pt; font-family: monospace;">${c.code || '-'}</td>
+                            <td style="padding: 4px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9pt;">${c.name}</td>
+                            <td style="padding: 4px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9pt; text-align: center;">${c.sks}</td>
+                        </tr>`;
+                    }).join('');
+
+                    semesterTables += `
+                    <div style="margin-bottom: 15px; page-break-inside: avoid;">
+                        <div style="display:flex; justify-content:space-between; border-bottom: 2px solid #0f172a; margin-bottom: 5px; padding-bottom: 2px;">
+                            <h4 style="margin: 0; font-size: 10pt; text-transform: uppercase;">Semester ${sem.semester}</h4>
+                            <span style="font-size: 9pt; font-weight: bold;">Total: ${totalSksSem} SKS</span>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9;">
+                                    <th style="padding: 4px 8px; width: 30px; font-size: 8pt; font-weight: bold; color: #64748b;">NO</th>
+                                    <th style="padding: 4px 8px; width: 80px; font-size: 8pt; font-weight: bold; color: #64748b;">KODE</th>
+                                    <th style="padding: 4px 8px; font-size: 8pt; font-weight: bold; color: #64748b;">MATA KULIAH</th>
+                                    <th style="padding: 4px 8px; width: 40px; font-size: 8pt; font-weight: bold; color: #64748b; text-align: center;">SKS</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>`;
+                }
+            });
+
+            if (semesterTables === '') {
+                semesterTables = '<p style="text-align: center; color: #94a3b8; font-style: italic;">Tidak ada mata kuliah yang perlu diambil (Lulus).</p>';
+            }
+
+            // --- QR CODE GENERATION FOR SIGNATURE ---
+            const qrCanvas = document.createElement('canvas');
+            const qr = new QRious({
+                element: qrCanvas,
+                value: `Dokumen ini sah dan ditandatangani secara digital oleh ${prodi.kaprodi} (Kaprodi ${prodi.nama}) pada ${dateString}. Verifikasi: ${letterNo}`,
+                size: 150
+            });
+            const qrDataUrl = qr.toDataURL();
+
+
+            const htmlContent = `
+            <html>
+                <head>
+                    <title>Berita Acara - ${mhs.name}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Inter', sans-serif; padding: 40px; color: #334155; }
+                        @media print { body { -webkit-print-color-adjust: exact; } }
+                    </style>
+                </head>
+                <body>
+                    <div style="max-width: 210mm; margin: 0 auto;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 24px; margin-bottom: 30px;">
+                            <div style="display: flex; align-items: center; gap: 20px;">
+                                ${logoHtml}
+                                <div>
+                                    <h1 style="font-size: 14pt; font-weight: 800; margin: 0; color: #0f172a; text-transform: uppercase;">${campus.name}</h1>
+                                    <p style="font-size: 9pt; margin: 4px 0 0 0; color: #64748b;">${campus.address}</p>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 8pt; margin: 0; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Dokumen Resmi</p>
+                                <p style="font-size: 8pt; margin: 2px 0 0 0; color: #64748b;">${campus.email}</p>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 30px;">
+                            <span style="background: #e0f2fe; color: #0369a1; font-size: 8pt; font-weight: 700; padding: 6px 12px; border-radius: 20px; text-transform: uppercase;">Berita Acara Akademik</span>
+                            <h2 style="font-size: 20pt; font-weight: 900; margin: 15px 0 5px 0; color: #0f172a;">Hasil Konversi & Rencana Studi</h2>
+                            <p style="font-size: 10pt; color: #94a3b8; font-weight: 500;">No. Ref: ${letterNo} &bull; Tanggal: ${dateString}</p>
+                        </div>
+                        
+                        <!-- Student Info Block -->
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 24px; align-items: center;">
+                                <div style="color: #94a3b8; font-size: 8pt; font-weight: 600; text-transform: uppercase;">Nama Lengkap</div>
+                                <div style="font-size: 11pt; font-weight: 700; color: #0f172a;">${mhs.name}</div>
+                                <div style="color: #94a3b8; font-size: 8pt; font-weight: 600; text-transform: uppercase;">Asal Kampus</div>
+                                <div style="font-size: 11pt; font-weight: 700; color: #0f172a;">${mhs.origin || '-'}</div>
+                                <div style="color: #94a3b8; font-size: 8pt; font-weight: 600; text-transform: uppercase;">Program Studi</div>
+                                <div style="font-size: 11pt; font-weight: 700; color: #0f172a;">${mhs.prodi}</div>
+                                <div style="color: #94a3b8; font-size: 8pt; font-weight: 600; text-transform: uppercase;">Est. Sisa Studi</div>
+                                <div style="font-size: 11pt; font-weight: 700; color: #e11d48;">${mhs.duration || '-'}</div>
+                            </div>
+                            <div style="text-align: right; padding-left: 30px; border-left: 2px solid #e2e8f0;">
+                                <div style="font-size: 32pt; font-weight: 900; color: #094E8B; line-height: 1;">${mhs.sks}</div>
+                                <div style="font-size: 9pt; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 5px;">Total SKS Diakui</div>
+                            </div>
+                        </div>
+
+                        <!-- Course List Section -->
+                        <h3 style="font-size: 12pt; font-weight: 800; color: #0f172a; margin-bottom: 15px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Kewajiban Mata Kuliah (KRS)</h3>
+                        <div style="margin-bottom: 40px; font-size: 10pt;">
+                            <p style="margin-bottom: 15px;">Berikut adalah daftar mata kuliah yang <strong>wajib ditempuh</strong> oleh mahasiswa pada semester-semester berikutnya:</p>
+                            ${semesterTables}
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; page-break-inside: avoid;">
+                            <div style="text-align: left;">
+                                <p style="font-size: 9pt; color: #94a3b8; margin-bottom: 60px;">Disetujui Oleh,</p>
+                                <img src="${qrDataUrl}" style="width: 100px; height: 100px; margin-bottom: 10px;">
+                                <p style="font-size: 11pt; font-weight: 700; color: #0f172a; margin: 0;">${prodi.kaprodi}</p>
+                                <p style="font-size: 9pt; color: #64748b; margin: 2px 0 0 0;">Ketua Program Studi</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 8pt; color: #94a3b8; max-width: 250px; margin-left: auto;">Dokumen ini diterbitkan secara digital oleh sistem KonverPro dan sah tanpa tanda tangan basah.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+            </html>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+        }
+        function closeBeritaAcara() { document.getElementById('ba-modal').classList.add('hidden'); }
+        
+        function exportToCSV() { 
+            const list = JSON.parse(localStorage.getItem(KEY_MHS)); 
+            const safeStr = (str) => `"${String(str || "").replace(/"/g, '""')}"`;
+            
+            const headers = ["ID", "Nama", "Prodi", "SKS Diakui", "Status", "Tanggal"];
+            const rows = list.map(e => [
+                e.id, 
+                safeStr(e.name), 
+                safeStr(e.prodi), 
+                e.sks, 
+                safeStr(e.status),
+                new Date(e.id).toLocaleDateString('id-ID')
+            ].join(","));
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+            const encodedUri = encodeURI(csvContent); 
+            const link = document.createElement("a"); 
+            link.setAttribute("href", encodedUri); 
+            link.setAttribute("download", `KonverPro_Data_${Date.now()}.csv`); 
+            document.body.appendChild(link); 
+            link.click(); 
+            document.body.removeChild(link); 
+            showToast("success", "Data berhasil diekspor.");
+        }
+
+        function renderBillingData() {
+            const mhs = JSON.parse(localStorage.getItem(KEY_MHS) || "[]");
+            const prodiList = JSON.parse(localStorage.getItem(KEY_PRODI) || "[]");
+            
+            const approvedList = mhs.filter(x => x.status === 'approved');
+            
+            const total = approvedList.reduce((sum, m) => {
+                const p = prodiList.find(pr => pr.nama === m.prodi);
+                return sum + (p ? (p.registrationFee || 150000) : 150000);
+            }, 0);
+
+            const balanceText = document.getElementById('billing-balance-display');
+            const statusDot = document.getElementById('billing-status-dot');
+            const statusText = document.getElementById('billing-status-text');
+            
+            balanceText.textContent = "Rp " + APP_STATE.saldo.toLocaleString('id-ID');
+            document.getElementById('billing-amount-display').textContent = "Rp " + total.toLocaleString('id-ID');
+            
+            if (APP_STATE.saldo <= 2000000) { 
+                balanceText.className = "text-4xl font-black text-rose-300"; 
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"; 
+                statusText.textContent = "Saldo Menipis"; 
+                statusText.className = "text-lg font-bold text-rose-300"; 
+            } else { 
+                balanceText.className = "text-4xl font-black text-white"; 
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"; 
+                statusText.textContent = "Good Standing"; 
+                statusText.className = "text-lg font-bold text-white"; 
+            } 
+            
+            const tbody = document.getElementById('billing-trace-body'); 
+            if (tbody) { 
+                if (approvedList.length === 0) { 
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-slate-300 italic">Belum ada transaksi approved.</td></tr>`; 
+                } else { 
+                    const sortedList = approvedList.sort((a,b) => b.id - a.id);
+                    tbody.innerHTML = sortedList.map(item => { 
+                        const p = prodiList.find(pr => pr.nama === item.prodi);
+                        const displayRate = p ? (p.registrationFee || 150000) : 150000;
+                        return `<tr><td class="px-6 py-4 font-bold text-primary-900">${item.name}</td><td class="px-6 py-4 text-xs text-slate-500 uppercase">${item.prodi}</td><td class="px-6 py-4 text-center font-mono text-xs">${new Date(item.id).toLocaleDateString('id-ID')}</td><td class="px-6 py-4 text-right font-black">Rp ${displayRate.toLocaleString('id-ID')}</td></tr>` 
+                    }).join(''); 
+                } 
+            } 
+        }
+
+        function renderLaporan() {
+            const mhs = JSON.parse(localStorage.getItem(KEY_MHS) || "[]");
+            document.getElementById('lap-approved').textContent = mhs.filter(x => x.status === 'approved').length;
+            document.getElementById('lap-pending').textContent = mhs.filter(x => x.status === 'pending').length;
+            document.getElementById('lap-revisi').textContent = mhs.filter(x => x.status === 'revisi').length;
+            document.getElementById('lap-rejected').textContent = mhs.filter(x => x.status === 'ditolak').length;
+            const originCounts = {}; mhs.forEach(x => { originCounts[x.origin || 'Lainnya'] = (originCounts[x.origin || 'Lainnya'] || 0) + 1; });
+            const sortedOrigins = Object.entries(originCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const ctxTopCampus = document.getElementById('chart-top-campus'); if (APP_STATE.charts.topCampus) APP_STATE.charts.topCampus.destroy();
+            if (ctxTopCampus) { APP_STATE.charts.topCampus = new Chart(ctxTopCampus, { type: 'bar', data: { labels: sortedOrigins.map(item => item[0]), datasets: [{ label: 'Jumlah Mahasiswa', data: sortedOrigins.map(item => item[1]), backgroundColor: '#094E8B', borderRadius: 6, barThickness: 20 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false } }, y: { grid: { display: false } } } } }); }
+            const prodis = [...new Set(mhs.map(item => item.prodi))];
+            document.getElementById('lap-table-analisis').innerHTML = prodis.map(p => { const students = mhs.filter(m => m.prodi === p); const avgSks = Math.round(students.reduce((acc, curr) => acc + curr.sks, 0) / students.length) || 0; return `<tr class="border-b border-slate-50"><td class="p-4 font-bold text-primary-900">${p}</td><td class="p-4 text-center font-bold">${students.length}</td><td class="p-4 text-center font-bold text-blue-600">${avgSks}</td><td class="p-4 text-center font-bold text-slate-500">3.45</td></tr>`; }).join('');
+        }
+
+        let isBioEditing = false;
+        function toggleEditBiodata(btn) {
+            const nameEl = document.getElementById('display-cv-name');
+            if(nameEl.textContent === '-' && !isBioEditing) {
+                showToast('info', 'Belum ada data untuk diedit.');
+                return;
+            }
+            
+            isBioEditing = !isBioEditing;
+            const ids = ['display-cv-name', 'display-cv-univ', 'display-cv-email', 'display-cv-phone'];
+            const icon = document.getElementById('icon-edit-bio');
+            
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (isBioEditing) {
+                    el.setAttribute('contenteditable', 'true');
+                    el.classList.add('bg-yellow-50', 'border', 'border-secondary-500', 'text-black', 'p-1');
+                    el.classList.remove('truncate'); 
+                } else {
+                    el.setAttribute('contenteditable', 'false');
+                    el.classList.remove('bg-yellow-50', 'border', 'border-secondary-500', 'text-black', 'p-1');
+                    el.classList.add('truncate');
+                    
+                    if(id === 'display-cv-name') cvState.studentName = el.textContent;
+                    if(id === 'display-cv-univ') cvState.prevUniv = el.textContent;
+                    if(id === 'display-cv-email') cvState.studentEmail = el.textContent;
+                    if(id === 'display-cv-phone') cvState.studentPhone = el.textContent;
+                }
+            });
+
+            if(isBioEditing) {
+                icon.classList.replace('ph-pencil-simple', 'ph-check');
+                document.getElementById('display-cv-name').focus();
+            } else {
+                icon.classList.replace('ph-check', 'ph-pencil-simple');
+                showToast('success', 'Perubahan biodata disimpan.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { initData(); });
+    </script>
+</body>
+</html>
