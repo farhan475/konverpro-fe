@@ -1,82 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "@/lib/axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Download, GraduationCap, Funnel } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { University } from "@/components/super-admin/types";
+
+interface CampusConversionStats extends University {
+  total: number;
+  internal: number;
+  leads: number;
+  chart_name: string;
+}
+
+type ChartFilter = "total" | "internal" | "leads";
 
 export default function KonversiDataPage() {
-  const [campuses, setCampuses] = useState<any[]>([]);
+  const [campuses, setCampuses] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
-  const [chartFilter, setChartFilter] = useState("total");
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartFilter, setChartFilter] = useState<ChartFilter>("total");
+  const [chartData, setChartData] = useState<CampusConversionStats[]>([]);
 
   // Modal Detail
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [selectedCampus, setSelectedCampus] = useState<any>(null);
+  const [selectedCampus, setSelectedCampus] = useState<CampusConversionStats | null>(null);
 
-  const fetchData = async () => {
+  const buildCampusStats = useCallback((campus: University): CampusConversionStats => {
+    const total = campus.conversions_count || 0;
+    const isInternalCampus = campus.billing_mode === "subsidy";
+
+    return {
+      ...campus,
+      total,
+      internal: isInternalCampus ? total : 0,
+      leads: isInternalCampus ? 0 : total,
+      chart_name: campus.name.length > 15 ? `${campus.name.substring(0, 15)}...` : campus.name,
+    };
+  }, []);
+
+  const updateChart = useCallback((data: University[], filterType: ChartFilter) => {
+    const sorted = data
+      .map(buildCampusStats)
+      .sort((a, b) => {
+        if (filterType === "total") return b.total - a.total;
+        if (filterType === "internal") return b.internal - a.internal;
+        return b.leads - a.leads;
+      })
+      .slice(0, 10);
+
+    setChartData(sorted);
+  }, [buildCampusStats]);
+
+  const fetchData = useCallback(async () => {
     try {
-      const res = await axios.get('/super-admin/campuses'); // Data list dari campuses API works fine untuk rank
-      const data = res.data.data;
+      const res = await axios.get("/super-admin/campuses");
+      const data = (res.data.data ?? []) as University[];
       setCampuses(data);
-      updateChart(data, "total");
-    } catch (error) {
+    } catch {
       toast.error("Gagal memuat data konversi");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  const updateChart = (data: any[], filterType: string) => {
-      // Mock leads/internal since backend might only give conversions_count
-      const mapped = data.map(c => {
-          const total = c.conversions_count || 0;
-          // Random mock split 70% internal, 30% leads just for visualization on UI
-          const internal = Math.floor(total * 0.7);
-          const leads = total - internal;
-          return {
-              ...c,
-              total,
-              internal,
-              leads,
-              name: c.name.length > 15 ? c.name.substring(0, 15) + "..." : c.name
-          };
-      });
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
-      const sorted = [...mapped].sort((a,b) => {
-          if (filterType === 'total') return b.total - a.total;
-          if (filterType === 'internal') return b.internal - a.internal;
-          return b.leads - a.leads;
-      }).slice(0, 10);
-
-      setChartData(sorted);
-  };
+  useEffect(() => {
+    updateChart(campuses, chartFilter);
+  }, [campuses, chartFilter, updateChart]);
 
   const handleFilterChange = (val: string) => {
-      setChartFilter(val);
-      updateChart(campuses, val);
+    setChartFilter(val as ChartFilter);
   };
 
-  const openDetail = (c: any) => {
-      // Mock stats to simulate internal HTML behavior
-      const total = c.conversions_count || 0;
-      setSelectedCampus({
-          ...c,
-          internal: Math.floor(total * 0.7),
-          leads: total - Math.floor(total * 0.7)
-      });
-      setIsDetailOpen(true);
+  const openDetail = (campus: University) => {
+    setSelectedCampus(buildCampusStats(campus));
+    setIsDetailOpen(true);
+  };
+
+  const handleExport = () => {
+    if (campuses.length === 0) return;
+
+    const rows = campuses.map((campus) => {
+      const stats = buildCampusStats(campus);
+      return [
+        `"${stats.name.replace(/"/g, '""')}"`,
+        stats.internal,
+        stats.leads,
+        stats.total,
+      ].join(",");
+    });
+
+    const csvContent = [
+      "Institusi,Konversi Internal,Lead Acquisition,Total Konversi",
+      ...rows,
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "laporan-konversi-kampus.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -106,7 +140,7 @@ export default function KonversiDataPage() {
                        <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
+                                <XAxis dataKey="chart_name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
                                 <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                                 <Bar dataKey={chartFilter} fill="#094E8B" radius={[4, 4, 0, 0]} barSize={40} />
@@ -120,7 +154,12 @@ export default function KonversiDataPage() {
        {/* TABLE */}
        <Card className="border-slate-200 shadow-sm overflow-hidden">
            <div className="p-4 border-b border-slate-100 flex justify-end bg-white">
-               <Button variant="outline" className="text-xs font-bold uppercase text-slate-600 bg-slate-50">
+               <Button
+                 variant="outline"
+                 className="text-xs font-bold uppercase text-slate-600 bg-slate-50"
+                 onClick={handleExport}
+                 disabled={campuses.length === 0}
+               >
                    <Download className="w-4 h-4 mr-2" /> Export Data
                </Button>
            </div>
@@ -142,16 +181,14 @@ export default function KonversiDataPage() {
                         <TableRow><TableCell colSpan={5} className="text-center py-8 text-slate-400 italic">Tidak ada data.</TableCell></TableRow>
                     ) : (
                         campuses.map(c => {
-                            const total = c.conversions_count || 0;
-                            const internal = Math.floor(total * 0.7);
-                            const leads = total - internal;
+                            const stats = buildCampusStats(c);
 
                             return (
                                 <TableRow key={c.id} className="hover:bg-slate-50">
                                     <TableCell className="font-bold text-slate-900">{c.name}</TableCell>
-                                    <TableCell className="text-center text-blue-600 font-bold">{internal}</TableCell>
-                                    <TableCell className="text-center text-amber-600 font-bold">{leads}</TableCell>
-                                    <TableCell className="text-center font-black text-lg">{total}</TableCell>
+                                    <TableCell className="text-center text-blue-600 font-bold">{stats.internal}</TableCell>
+                                    <TableCell className="text-center text-amber-600 font-bold">{stats.leads}</TableCell>
+                                    <TableCell className="text-center font-black text-lg">{stats.total}</TableCell>
                                     <TableCell className="text-right">
                                         <Button size="sm" variant="secondary" className="text-[10px] font-black tracking-widest bg-slate-100 text-slate-600 hover:bg-slate-200" onClick={() => openDetail(c)}>
                                             DETAIL

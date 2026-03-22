@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { isAxiosError } from "axios";
 import axios from "@/lib/axios";
 import { 
   BookOpen, 
@@ -10,18 +12,18 @@ import {
   MagnifyingGlass, 
   CheckCircle,
   X,
-  Buildings,
   GraduationCap,
   CaretRight,
   WarningCircle,
   FileArrowUp
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import type { CurriculumCourse, StudyProgramOption } from "@/components/campus-admin/types";
 
 export default function CurriculumPage() {
-  const [prodis, setProdis] = useState<any[]>([]);
+  const [prodis, setProdis] = useState<StudyProgramOption[]>([]);
   const [selectedProdi, setSelectedProdi] = useState<string>("");
-  const [courses, setCourses] = useState<any[]>([]);
+  const [courses, setCourses] = useState<CurriculumCourse[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -38,7 +40,7 @@ export default function CurriculumPage() {
         if (prodiData && prodiData.length > 0) {
           setSelectedProdi(prodiData[0].id);
         }
-      } catch (err) {
+      } catch {
         toast.error("Gagal memuat prodi");
       }
     };
@@ -76,36 +78,144 @@ export default function CurriculumPage() {
       const res = await axios.get(`/curriculum/prodi/${selectedProdi}/courses`);
       setCourses(res.data.data);
     } catch (error: unknown) {
-      toast.error(error.response?.data?.message || "Gagal import");
+      toast.error(
+        isAxiosError(error) && error.response?.data?.message
+          ? String(error.response.data.message)
+          : "Gagal import",
+      );
     } finally {
       setUploading(false);
     }
   };
 
-  const currentProdiName = prodis.find(p => p.id === selectedProdi)?.name || "Pilih Program Studi";
-  const filteredCourses = courses.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.code.toLowerCase().includes(searchQuery.toLowerCase())
+  const currentProdiName = prodis.find((prodi) => prodi.id === selectedProdi)?.name || "Pilih Program Studi";
+  const currentProdiLevel =
+    prodis.find((prodi) => prodi.id === selectedProdi)?.level || "Program Studi";
+  const filteredCourses = courses.filter((course) => 
+    course.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    course.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const mandatoryCourses = courses.filter((course) => course.is_mandatory).length;
+  const repositoryStats = [
+    {
+      label: "Prodi Aktif",
+      value: prodis.length,
+      helper: "siap memakai master kurikulum",
+    },
+    {
+      label: "Total MK",
+      value: courses.length,
+      helper: "terdaftar di repositori",
+    },
+    {
+      label: "MK Wajib",
+      value: mandatoryCourses,
+      helper: "ditandai sebagai wajib",
+    },
+  ];
 
   return (
-    <div className="space-y-10 animate-fade-in-quick pb-20">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-            <h2 className="font-heading text-xl font-black text-[#001a33] uppercase tracking-tight">Repositori Kurikulum</h2>
-            <p className="text-sm text-slate-400">Kelola master data mata kuliah untuk pencocokan konversi otomatis.</p>
+    <div className="space-y-10 animate-fade-in-quick bg-[radial-gradient(circle_at_top,_rgba(9,78,139,0.09),_transparent_38%),linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] pb-20">
+      <section className="overflow-hidden rounded-[2.5rem] border border-[#001a33]/10 bg-[#001a33] p-7 text-white shadow-2xl shadow-slate-950/10">
+        <div className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
+                Curriculum Repository
+              </span>
+              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+                {currentProdiLevel}
+              </span>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">
+                Master Data Mata Kuliah
+              </p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight">
+                {currentProdiName}
+              </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-blue-100/80">
+                Kelola master kurikulum untuk pencocokan otomatis, upload file
+                resmi prodi, dan sinkronkan struktur mata kuliah dengan alur
+                konversi kampus.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {repositoryStats.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4 backdrop-blur-sm"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-2xl font-black text-white">{item.value}</p>
+                  <p className="mt-2 text-xs font-medium text-white/65">
+                    {item.helper}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-amber-200">
+                  <Lightning weight="fill" size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                    Matching Engine
+                  </p>
+                  <p className="mt-1 text-sm font-black text-white">
+                    Keyword matching aktif untuk auto-mapping
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-white/65">
+                    Semakin rapi master mata kuliah dan keyword, semakin baik
+                    akurasi hasil konversi otomatis di workspace review.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row xl:flex-col">
+              <Link
+                href="/campus-admin/akad-settings"
+                className="px-6 py-4 rounded-2xl border border-white/15 bg-white/10 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/15 transition shadow-sm"
+              >
+                <GraduationCap weight="bold" className="text-emerald-200" /> Akad Settings
+              </Link>
+              <button 
+                onClick={() => setModalOpen(true)}
+                className="px-8 py-4 bg-white text-[#001a33] rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-blue-50 transition shadow-xl active:scale-95 group"
+              >
+                  <UploadSimple weight="bold" className="group-hover:-translate-y-1 transition-transform" /> Import Excel Master
+              </button>
+            </div>
+          </div>
         </div>
-        <button 
-          onClick={() => setModalOpen(true)}
-          className="px-8 py-4 bg-[#094E8B] text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-[#073e6f] transition shadow-xl shadow-blue-900/10 active:scale-95 group"
-        >
-            <UploadSimple weight="bold" className="group-hover:-translate-y-1 transition-transform" /> Import Excel Master
-        </button>
-      </header>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
         {/* LEFT: PRODI LIST */}
         <div className="lg:col-span-1 space-y-6">
+            <div className="rounded-[2rem] border border-blue-100 bg-blue-50 p-5">
+                <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center text-[#094E8B] shadow-sm shrink-0">
+                        <FileArrowUp weight="bold" size={20} />
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-[#001a33]">Template import resmi</p>
+                        <p className="text-xs leading-relaxed text-blue-900/75 mt-1">
+                            Gunakan file master yang konsisten agar semester, SKS, dan sifat mata kuliah terbaca rapi oleh sistem.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
                 <GraduationCap weight="bold" /> Program Studi
             </h4>
@@ -223,7 +333,7 @@ export default function CurriculumPage() {
                         <div>
                             <h4 className="font-black uppercase tracking-[0.2em] text-xs">Matching Engine Active</h4>
                             <p className="text-[11px] text-blue-200 mt-1 font-medium italic opacity-70">
-                                "Sistem menggunakan keywords pada setiap mata kuliah di atas untuk <br /> meningkatkan akurasi konversi otomatis hingga 98%."
+                                &quot;Sistem menggunakan keywords pada setiap mata kuliah di atas untuk <br /> meningkatkan akurasi konversi otomatis hingga 98%.&quot;
                             </p>
                         </div>
                     </div>

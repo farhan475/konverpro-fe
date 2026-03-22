@@ -6,6 +6,7 @@ import {
   MagnifyingGlass,
   FileArrowDown,
   ListDashes,
+  ListChecks,
   CheckCircle,
   Clock,
   UserSquare,
@@ -16,18 +17,20 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Link from "next/link";
+import type { SelectedCourse } from "@/components/campus-admin/types";
+import { downloadCsvFile } from "@/lib/fileExports";
 
 interface Conversion {
   id: string;
   name: string;
   email: string;
   status: string;
-  created_at: string;
+  date: string;
   trx_id?: string;
   origin?: string;
   prodi?: string;
   sks?: number;
-  results?: Record<string, unknown>;
+  results?: Record<string, SelectedCourse>;
 }
 
 export default function HasilKonversi() {
@@ -55,27 +58,19 @@ export default function HasilKonversi() {
           origin: (i.origin_campus || i.origin) as string | undefined,
           prodi: ((i.study_program as Record<string, unknown>)?.name ||
             i.prodi) as string | undefined,
-          sks: (i.total_sks || i.sks) as number | undefined,
+          sks: (i.total_sks_accepted || i.total_sks || i.sks) as number | undefined,
           status: (i.status || "pending") as string,
           date: (i.created_at || new Date().toISOString()) as string,
           results: (i.matched_courses || i.results) as
-            | Record<string, unknown>
+            | Record<string, SelectedCourse>
             | undefined,
         };
       });
 
       setData(mapped);
     } catch {
-      const local = JSON.parse(localStorage.getItem("kp_mhs_v2") || "[]");
-      setData(
-        local.map((l: unknown) => ({
-          ...(l as Record<string, unknown>),
-          trx_id: `TRX-${(l as Record<string, unknown>).id}`,
-          date: new Date(
-            (l as Record<string, unknown>).id as string,
-          ).toISOString(),
-        })),
-      );
+      toast.error("Gagal memuat data hasil konversi.");
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -101,11 +96,7 @@ export default function HasilKonversi() {
       toast.success(`Berhasil memperbarui status.`);
       loadData();
     } catch {
-      // Fallback for mock/local
-      setData((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
-      );
-      toast.success(`Status diperbarui (Mode Offline)`);
+      toast.error("Gagal memperbarui status.");
     } finally {
       setValidationModal({ isOpen: false, data: null });
     }
@@ -121,6 +112,48 @@ export default function HasilKonversi() {
     );
   });
 
+  const totalApproved = data.filter((item) =>
+    ["approved", "disetujui"].includes(item.status.toLowerCase()),
+  ).length;
+  const totalPending = data.filter((item) =>
+    ["pending", "revisi"].includes(item.status.toLowerCase()),
+  ).length;
+  const totalRecognizedSks = data.reduce(
+    (sum, item) => sum + Number(item.sks ?? 0),
+    0,
+  );
+
+  const handleExport = () => {
+    if (filteredData.length === 0) {
+      toast.info("Belum ada data yang bisa diexport.");
+      return;
+    }
+
+    downloadCsvFile(
+      `hasil-konversi-${Date.now()}.csv`,
+      [
+        "TRX ID",
+        "Nama Mahasiswa",
+        "Asal Kampus",
+        "Program Studi",
+        "SKS Diakui",
+        "Status",
+        "Tanggal Input",
+      ],
+      filteredData.map((item) => [
+        item.trx_id,
+        item.name,
+        item.origin,
+        item.prodi,
+        item.sks,
+        item.status,
+        new Date(item.date).toLocaleDateString("id-ID"),
+      ]),
+    );
+
+    toast.success("Laporan hasil konversi berhasil diunduh.");
+  };
+
   return (
     <div className="space-y-10 animate-fade-in-quick pb-20">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -133,7 +166,11 @@ export default function HasilKonversi() {
           </p>
         </div>
         <div className="flex gap-4 w-full md:w-auto">
-          <button className="flex-1 md:flex-none px-6 py-4 bg-white border border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-brand-500 hover:bg-slate-50 transition shadow-sm flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="flex-1 md:flex-none px-6 py-4 bg-white border border-slate-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-brand-500 hover:bg-slate-50 transition shadow-sm flex items-center justify-center gap-3"
+          >
             <FileArrowDown size={18} weight="fill" /> Export Laporan
           </button>
           <Link
@@ -145,24 +182,129 @@ export default function HasilKonversi() {
         </div>
       </header>
 
+      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="relative overflow-hidden rounded-[2.75rem] bg-[#031f37] p-8 text-white shadow-[0_28px_80px_rgba(3,31,55,0.2)] lg:p-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(253,216,36,0.18),_transparent_24%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.14),_transparent_30%)]" />
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">
+              <ListChecks weight="fill" className="h-4 w-4" />
+              Review Queue
+            </div>
+            <h2 className="mt-5 max-w-3xl text-3xl font-black tracking-tight text-white lg:text-4xl">
+              Kelola antrean validasi dan finalisasi hasil konversi mahasiswa.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
+              Halaman ini sekarang lebih terasa seperti meja review admin
+              kampus: ada filter status, ringkasan pipeline, dan akses cepat ke
+              validasi maupun review detail.
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                  Total Pengajuan
+                </p>
+                <p className="mt-3 text-4xl font-black text-white">
+                  {data.length}
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Semua berkas yang sudah masuk ke workflow review.
+                </p>
+              </div>
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                  Pending Review
+                </p>
+                <p className="mt-3 text-4xl font-black text-amber-300">
+                  {totalPending}
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Pengajuan yang butuh tindakan lanjutan dari admin.
+                </p>
+              </div>
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                  SKS Terkonversi
+                </p>
+                <p className="mt-3 text-4xl font-black text-white">
+                  {totalRecognizedSks}
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Akumulasi SKS yang sudah berhasil tercatat.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-6 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+              Ringkasan Status
+            </p>
+            <div className="mt-5 grid gap-4">
+              <div className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <p className="text-sm font-black text-[#001a33]">
+                  Disetujui
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {totalApproved} pengajuan sudah lolos ke hasil final.
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <p className="text-sm font-black text-[#001a33]">
+                  Filter aktif
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {statusFilter === "all"
+                    ? "Semua status sedang ditampilkan."
+                    : `Mode filter saat ini: ${statusFilter}.`}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <p className="text-sm font-black text-[#001a33]">
+                  Data tampil
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {filteredData.length} baris cocok dengan pencarian dan filter.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2.5rem] border border-amber-100 bg-amber-50/70 p-6 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+              Review Tip
+            </p>
+            <h3 className="mt-3 text-xl font-black tracking-tight text-[#001a33]">
+              Prioritaskan pengajuan dengan status pending agar antrean tetap sehat.
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              Validasi cepat cocok untuk keputusan singkat, sementara `Review
+              Detail` dipakai saat perlu audit padanan mata kuliah lebih dalam.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* FILTER BOX */}
       <div className="flex flex-col lg:flex-row justify-between gap-6">
-        <div className="flex bg-white p-1.5 rounded-4xl border border-slate-100 shadow-sm w-fit overflow-x-auto no-scrollbar">
+        <div className="flex w-full overflow-x-auto rounded-4xl border border-slate-100 bg-white p-1.5 shadow-sm no-scrollbar lg:w-fit">
           <button
             onClick={() => setStatusFilter("all")}
-            className={`px-8 py-3 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === "all" ? "bg-brand-500 text-white shadow-lg shadow-blue-900/20" : "text-slate-400 hover:text-slate-600"}`}
+            className={`shrink-0 rounded-3xl px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === "all" ? "bg-brand-500 text-white shadow-lg shadow-blue-900/20" : "text-slate-400 hover:text-slate-600"}`}
           >
             Semua
           </button>
           <button
             onClick={() => setStatusFilter("pending")}
-            className={`px-8 py-3 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === "pending" ? "bg-amber-400 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"}`}
+            className={`shrink-0 rounded-3xl px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === "pending" ? "bg-amber-400 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"}`}
           >
             Pending
           </button>
           <button
             onClick={() => setStatusFilter("approved")}
-            className={`px-8 py-3 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === "approved" ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"}`}
+            className={`shrink-0 rounded-3xl px-8 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === "approved" ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"}`}
           >
             Disetujui
           </button>
@@ -193,7 +335,7 @@ export default function HasilKonversi() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full min-w-[980px] text-left">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -293,14 +435,22 @@ export default function HasilKonversi() {
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <button
-                          onClick={() =>
-                            setValidationModal({ isOpen: true, data: item })
-                          }
-                          className="px-6 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 hover:border-blue-100 transition shadow-sm hover:shadow-md active:scale-95"
-                        >
-                          Buka Validasi
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() =>
+                              setValidationModal({ isOpen: true, data: item })
+                            }
+                            className="px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 hover:border-blue-100 transition shadow-sm hover:shadow-md active:scale-95"
+                          >
+                            Validasi Cepat
+                          </button>
+                          <Link
+                            href={`/campus-admin/conversions/${item.id}`}
+                            className="px-5 py-2.5 bg-brand-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-brand-600 transition shadow-sm hover:shadow-md"
+                          >
+                            Review Detail
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -337,7 +487,7 @@ export default function HasilKonversi() {
             <div className="flex-1 overflow-y-auto p-10 bg-slate-50/30">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-6 lg:col-span-2">
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                     <div>
                       <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.2em] mb-2">
                         Nama Mahasiswa
@@ -384,8 +534,7 @@ export default function HasilKonversi() {
                 <div className="divide-y divide-slate-50">
                   {validationModal.data?.results &&
                     Object.entries(validationModal.data.results).map(
-                      ([target, srcData]: [string, unknown], idx) => {
-                        const src = srcData as Record<string, unknown>;
+                      ([target, src], idx) => {
                         return (
                           <div
                             key={idx}

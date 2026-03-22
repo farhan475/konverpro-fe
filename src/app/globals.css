@@ -6,7 +6,9 @@
 
 @theme inline {
   /* Fonts */
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    "Plus Jakarta Sans", "Aptos", "Segoe UI", ui-sans-serif, system-ui,
+    sans-serif;
   --font-mono: var(--font-geist-mono);
 
   /* --- BRAND COLORS (Dari HTML KonverPro Asli) --- */

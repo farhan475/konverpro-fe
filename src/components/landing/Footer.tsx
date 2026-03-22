@@ -1,49 +1,120 @@
-import { MapPin, Mail } from "lucide-react";
+import Link from "next/link";
+import { EnvelopeSimple, MapPin } from "@phosphor-icons/react";
 
-export default function Footer() {
+interface FooterProps {
+  onNavigate?: (
+    target: "home" | "kampus" | "prosedur" | "simulation-area",
+  ) => void;
+}
+
+export default function Footer({ onNavigate }: FooterProps) {
   return (
-    <footer className="bg-slate-900 text-white border-t border-slate-800 pt-16 pb-8 mt-auto">
-      <div className="max-w-[95%] mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">K</div>
-              <span className="font-bold text-2xl tracking-tight">KonverPro</span>
+    <footer className="mt-auto border-t border-slate-800 bg-slate-900 px-4 pb-8 pt-16 text-white sm:px-6">
+      <div className="mx-auto mb-12 grid max-w-[95%] gap-12 border-b border-slate-800 pb-12 md:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-xl font-bold text-white">
+              K
             </div>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Platform marketplace pendidikan pertama di Indonesia yang mengintegrasikan sistem konversi SKS otomatis dengan pendaftaran mahasiswa baru.
-            </p>
+            <h2 className="text-2xl font-black tracking-tight">KonverPro</h2>
           </div>
-          <div>
-            <h4 className="font-bold text-lg mb-6">Perusahaan</h4>
-            <ul className="space-y-4 text-sm text-slate-400">
-              <li><a href="#" className="hover:text-white transition">Tentang Kami</a></li>
-              <li><a href="#" className="hover:text-white transition">Karir</a></li>
-              <li><a href="#" className="hover:text-white transition">Mitra Kampus</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-lg mb-6">Layanan</h4>
-            <ul className="space-y-4 text-sm text-slate-400">
-              <li><a href="#" className="hover:text-white transition">Simulasi Konversi</a></li>
-              <li><a href="#" className="hover:text-white transition">Cari Program Studi</a></li>
-              <li><a href="#" className="hover:text-white transition">Beasiswa</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-lg mb-6">Kontak</h4>
-            <ul className="space-y-4 text-sm text-slate-400">
-              <li className="flex items-start gap-3"><MapPin className="text-brand-500 text-lg mt-0.5" /><span>Menara 165, Jakarta Selatan</span></li>
-              <li className="flex items-center gap-3"><Mail className="text-brand-500 text-lg" /><span>hello@konverpro.id</span></li>
-            </ul>
-          </div>
+          <p className="text-sm leading-relaxed text-slate-400">
+            Platform marketplace pendidikan pertama di Indonesia yang
+            mengintegrasikan sistem konversi SKS otomatis dengan pendaftaran
+            mahasiswa baru.
+          </p>
         </div>
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-slate-500">&copy; {new Date().getFullYear()} PT Rajo Net Indonesia. All rights reserved.</p>
-          <div className="flex gap-6 text-sm text-slate-500">
-            <a href="#" className="hover:text-white transition">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition">Terms of Service</a>
-          </div>
+
+        <div>
+          <h3 className="mb-6 text-lg font-bold">Perusahaan</h3>
+          <ul className="space-y-4 text-sm text-slate-400">
+            <li>
+              <Link href="#" className="transition-colors hover:text-white">
+                Tentang Kami
+              </Link>
+            </li>
+            <li>
+              <Link href="#" className="transition-colors hover:text-white">
+                Karir
+              </Link>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => onNavigate?.("kampus")}
+                className="transition-colors hover:text-white"
+              >
+                Mitra Kampus
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="mb-6 text-lg font-bold">Layanan</h3>
+          <ul className="space-y-4 text-sm text-slate-400">
+            <li>
+              <button
+                type="button"
+                onClick={() => onNavigate?.("simulation-area")}
+                className="transition-colors hover:text-white"
+              >
+                Simulasi Konversi
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => onNavigate?.("kampus")}
+                className="transition-colors hover:text-white"
+              >
+                Cari Program Studi
+              </button>
+            </li>
+            <li>
+              <Link href="#" className="transition-colors hover:text-white">
+                Beasiswa
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="mb-6 text-lg font-bold">Kontak</h3>
+          <ul className="space-y-4 text-sm text-slate-400">
+            <li className="flex items-start gap-3">
+              <MapPin
+                size={18}
+                weight="fill"
+                className="mt-0.5 text-brand-500"
+              />
+              <span>Menara 165, Jakarta Selatan</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <EnvelopeSimple
+                size={18}
+                weight="fill"
+                className="text-brand-500"
+              />
+              <span>hello@konverpro.id</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="mx-auto flex max-w-[95%] flex-col items-center justify-between gap-6 md:flex-row">
+        <p className="text-sm text-slate-500">
+          &copy; {new Date().getFullYear()} PT Rajo Net Indonesia. All rights
+          reserved.
+        </p>
+
+        <div className="flex gap-6 text-sm text-slate-500">
+          <Link href="#" className="transition-colors hover:text-white">
+            Privacy Policy
+          </Link>
+          <Link href="#" className="transition-colors hover:text-white">
+            Terms of Service
+          </Link>
         </div>
       </div>
     </footer>

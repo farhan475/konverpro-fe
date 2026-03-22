@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import axios from "@/lib/axios";
-import { 
-  UserPlus, 
-  ChartBar, 
+import {
+  BookOpen,
+  ChartBar,
   TrendUp,
   CircleNotch,
   CheckCircle,
@@ -14,7 +14,9 @@ import {
   CurrencyCircleDollar,
   Briefcase,
   ListChecks,
-  Warning
+  Warning,
+  ShieldCheck,
+  Scan,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import {
@@ -25,8 +27,6 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   AreaChart,
   Area
 } from "recharts";
@@ -87,6 +87,18 @@ export default function AdminDashboard() {
     { id: 3, name: "Andi Wijaya", prodi: "Manajemen", time: "5 jam yang lalu", status: "Draft" },
   ];
 
+  const approvalRate =
+    stats.total_conversions > 0
+      ? Math.round((stats.approved / stats.total_conversions) * 100)
+      : 0;
+
+  const queueStatus =
+    stats.pending_review === 0
+      ? "Stabil"
+      : stats.pending_review <= 5
+        ? "Perlu Review"
+        : "Butuh Atensi";
+
   if (loading) {
     return (
       <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
@@ -109,13 +121,167 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-            <Link href="/admin/conversions" className="flex-1 md:flex-none">
-                <button className="w-full bg-[#094E8B] text-white px-6 py-3.5 rounded-xl text-xs font-black shadow-xl shadow-blue-900/20 hover:bg-[#073e6f] transition flex items-center justify-center gap-2">
-                <ListChecks weight="bold" className="text-lg" /> Validasi Berkas
-                </button>
-            </Link>
+          <Link
+            href="/campus-admin/curriculum"
+            className="flex-1 md:flex-none w-full bg-white border border-slate-100 text-[#094E8B] px-6 py-3.5 rounded-xl text-xs font-black shadow-sm hover:bg-slate-50 transition flex items-center justify-center gap-2"
+          >
+            <BookOpen weight="bold" className="text-lg" /> Kelola Kurikulum
+          </Link>
+          <Link
+            href="/campus-admin/akad-settings"
+            className="flex-1 md:flex-none w-full bg-white border border-slate-100 text-slate-700 px-6 py-3.5 rounded-xl text-xs font-black shadow-sm hover:bg-slate-50 transition flex items-center justify-center gap-2"
+          >
+            <CheckCircle weight="bold" className="text-lg text-emerald-600" /> Akad Settings
+          </Link>
+          <Link
+            href="/campus-admin/conversions"
+            className="flex-1 md:flex-none w-full bg-[#094E8B] text-white px-6 py-3.5 rounded-xl text-xs font-black shadow-xl shadow-blue-900/20 hover:bg-[#073e6f] transition flex items-center justify-center gap-2"
+          >
+            <ListChecks weight="bold" className="text-lg" /> Validasi Berkas
+          </Link>
         </div>
       </header>
+
+      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="relative overflow-hidden rounded-[2.75rem] bg-[#031f37] p-8 text-white shadow-[0_28px_80px_rgba(3,31,55,0.2)] lg:p-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(253,216,36,0.18),_transparent_24%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.14),_transparent_30%)]" />
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">
+              <ShieldCheck weight="fill" className="h-4 w-4" />
+              Campus Control Room
+            </div>
+            <h3 className="mt-5 max-w-3xl text-3xl font-black tracking-tight text-white lg:text-4xl">
+              Pantau validasi konversi, kesiapan prodi, dan operasional kampus
+              dari satu dashboard.
+            </h3>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
+              Lihat pipeline review, kesehatan operasional, dan aksi cepat tim
+              akademik dalam tampilan yang lebih ringkas dan mudah dipantau.
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                  Approval Rate
+                </p>
+                <p className="mt-3 text-4xl font-black text-white">
+                  {approvalRate}%
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Berdasarkan konversi yang sudah masuk ke sistem.
+                </p>
+              </div>
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                  Pipeline Aktif
+                </p>
+                <p className="mt-3 text-4xl font-black text-white">
+                  {stats.total_conversions}
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  Total berkas konversi terpantau untuk kampus Anda.
+                </p>
+              </div>
+              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+                  Queue Status
+                </p>
+                <p className="mt-3 text-2xl font-black text-amber-300">
+                  {queueStatus}
+                </p>
+                <p className="mt-2 text-sm text-white/60">
+                  {stats.pending_review} input sedang menunggu tindakan admin.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/campus-admin/input-konversi"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-[11px] font-black uppercase tracking-[0.18em] text-[#031f37] transition hover:bg-amber-300"
+              >
+                <Scan weight="bold" className="text-lg" />
+                Mulai Input Baru
+              </Link>
+              <Link
+                href="/campus-admin/conversions"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:bg-white/10"
+              >
+                <ListChecks weight="bold" className="text-lg" />
+                Buka Antrean Review
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-6 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+              Fokus Hari Ini
+            </p>
+            <div className="mt-5 space-y-4">
+              <div className="flex items-start gap-4 rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+                  <Warning weight="duotone" className="text-xl" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#001a33]">
+                    Antrean review
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                    {stats.pending_review} data masih menunggu validasi atau
+                    keputusan final dari admin kampus.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+                  <BookOpen weight="duotone" className="text-xl" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#001a33]">
+                    Kesiapan prodi
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                    {stats.prodi_aktif} prodi aktif sudah bisa dipakai untuk
+                    simulasi dan proses review awal.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                  <CurrencyCircleDollar weight="duotone" className="text-xl" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-[#001a33]">
+                    Saldo operasional
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                    Saldo saat ini Rp {Number(stats.balance || 0).toLocaleString("id-ID")} siap
+                    dipakai untuk proses konversi berikutnya.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2.5rem] border border-amber-100 bg-amber-50/70 p-6 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+              Insight Akademik
+            </p>
+            <h4 className="mt-3 text-xl font-black tracking-tight text-[#001a33]">
+              {approvalRate >= 70
+                ? "Pipeline kampus sedang dalam kondisi sehat."
+                : "Ada peluang besar untuk mempercepat approval minggu ini."}
+            </h4>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              Menjaga antrean review tetap rendah akan membuat pengalaman admin
+              prodi dan mahasiswa jauh lebih rapi, terutama saat volume
+              pendaftaran meningkat.
+            </p>
+          </div>
+        </div>
+      </section>
       
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
@@ -173,7 +339,9 @@ export default function AdminDashboard() {
               Rp {Number(stats.balance || 0).toLocaleString('id-ID')}
             </h4>
             <div className="mt-3 flex items-center gap-1.5">
-                <button className="text-[9px] font-black text-white hover:text-amber-400 transition-colors uppercase tracking-widest border-b border-white/20">Top Up Sekarang &rarr;</button>
+                <Link href="/campus-admin/settings?tab=billing" className="text-[9px] font-black text-white hover:text-amber-400 transition-colors uppercase tracking-widest border-b border-white/20">
+                  Top Up Sekarang &rarr;
+                </Link>
             </div>
           </div>
         </div>

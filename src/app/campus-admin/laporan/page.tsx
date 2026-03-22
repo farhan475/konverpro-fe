@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { 
   FilePdf, 
-  ChartLineUp, 
-  UsersThree, 
   CheckCircle, 
   Clock, 
   XCircle, 
@@ -24,34 +22,75 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import axios from "@/lib/axios";
+import { generateAcademicReportPDF } from "@/lib/generatePdf";
+
+interface ReportStats {
+  approved: number;
+  pending: number;
+  revisi: number;
+  rejected: number;
+}
+
+interface OriginDatum {
+  name: string;
+  value: number;
+}
+
+interface ProgramStudyDatum {
+  name: string;
+  students: number;
+  avgSks: number;
+  ipk: string;
+}
+
+interface ConversionReportItem {
+  status?: string;
+  origin?: string;
+  sks?: number;
+  study_program?: {
+    name?: string;
+  } | null;
+  student?: {
+    origin_university?: string;
+  } | null;
+  prodi?: string;
+  total_sks_accepted?: number;
+}
 
 export default function LaporanAkademik() {
-  const [stats, setStats] = useState({
+  const [campusName, setCampusName] = useState("KonverPro Campus Admin");
+  const [stats, setStats] = useState<ReportStats>({
     approved: 0,
     pending: 0,
     revisi: 0,
     rejected: 0
   });
   
-  const [originData, setOriginData] = useState<any[]>([]);
-  const [prodiData, setProdiData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [originData, setOriginData] = useState<OriginDatum[]>([]);
+  const [prodiData, setProdiData] = useState<ProgramStudyDatum[]>([]);
 
   useEffect(() => {
     // Simulasi ambil data (karena endpoint laporan sepertinya belum disiapkan khusus, kitaolah dari array conversions seperti di HTML)
     const loadData = async () => {
         try {
-            setLoading(true);
-            const response = await axios.get('/admin/conversions');
-            const list = response.data?.data?.data || response.data?.data || [];
+            const [response, profileResponse] = await Promise.all([
+              axios.get('/admin/conversions'),
+              axios.get('/campus/settings/profile').catch(() => ({ data: { data: null } })),
+            ]);
+            const list = (response.data?.data?.data || response.data?.data || []) as ConversionReportItem[];
+            const profileName = profileResponse.data?.data?.name;
+
+            if (profileName) {
+              setCampusName(String(profileName));
+            }
             
             // Count Status
             let app = 0, pen = 0, rev = 0, rej = 0;
             const origins: Record<string, number> = {};
             const prodis: Record<string, {count: number, sks: number}> = {};
 
-            list.forEach((item: any) => {
-                const status = item.status.toLowerCase();
+            list.forEach((item) => {
+                const status = item.status?.toLowerCase() ?? "pending";
                 if(status.includes('approv')) app++;
                 else if(status.includes('pend') || status.includes('review')) pen++;
                 else if(status.includes('revis')) rev++;
@@ -86,45 +125,24 @@ export default function LaporanAkademik() {
             }));
             setProdiData(prodiTable);
 
-        } catch (e) {
-            // Fallback localstorage
-            const local = JSON.parse(localStorage.getItem('kp_mhs_v2') || "[]");
-            let app = 0, pen = 0, rev = 0, rej = 0;
-            const origins: Record<string, number> = {};
-            const prodis: Record<string, {count: number, sks: number}> = {};
-
-            local.forEach((item: any) => {
-                const status = item.status.toLowerCase();
-                if(status === 'approved') app++;
-                else if(status === 'pending') pen++;
-                else if(status === 'revisi') rev++;
-                else if(status === 'ditolak') rej++;
-
-                const origin = item.origin || 'Lainnya';
-                origins[origin] = (origins[origin] || 0) + 1;
-
-                const prodi = item.prodi;
-                const sks = item.sks || 0;
-                
-                if(!prodis[prodi]) prodis[prodi] = {count: 0, sks: 0};
-                prodis[prodi].count++;
-                prodis[prodi].sks += sks;
-            });
-
-            setStats({ approved: app, pending: pen, revisi: rev, rejected: rej });
-            setOriginData(Object.entries(origins).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,v])=>({name:n, value:v})));
-            setProdiData(Object.entries(prodis).map(([name, data]) => ({
-                name, students: data.count, avgSks: Math.round(data.sks / data.count)||0, ipk: "3.45"
-            })));
-        } finally {
-            setLoading(false);
+        } catch {
+            toast.error("Gagal memuat laporan akademik.");
+            setStats({ approved: 0, pending: 0, revisi: 0, rejected: 0 });
+            setOriginData([]);
+            setProdiData([]);
         }
     };
     loadData();
   }, []);
 
   const handleDownload = () => {
-    toast.success("Mempersiapkan PDF Laporan...");
+    generateAcademicReportPDF({
+      stats,
+      origins: originData,
+      programs: prodiData,
+      campusName,
+    });
+    toast.success("PDF laporan akademik berhasil dibuat.");
   };
 
   const COLORS = ['#094E8B', '#1E3A8A', '#2563EB', '#3B82F6', '#60A5FA'];

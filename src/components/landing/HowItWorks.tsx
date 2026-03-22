@@ -1,28 +1,60 @@
-export default function HowItWorks() {
-  const steps = [
-    { id: 1, title: "Unduh Template", desc: "Download file Excel standar kami untuk mengisi data nilai transkrip Anda." },
-    { id: 2, title: "Isi Data", desc: "Salin data mata kuliah, nilai, dan SKS dari transkrip asli ke template." },
-    { id: 3, title: "Upload & Match", desc: "Unggah file kembali. AI kami akan mencocokkan dengan kurikulum kampus." },
-    { id: 4, title: "Daftar Kuliah", desc: "Lihat hasil konversi, bandingkan biaya, dan daftar ke kampus pilihan." }
-  ];
+const steps = [
+  {
+    number: "1",
+    title: "Unduh Template",
+    description:
+      "Download file Excel standar kami untuk mengisi data nilai transkrip Anda.",
+  },
+  {
+    number: "2",
+    title: "Isi Data",
+    description:
+      "Salin data mata kuliah, nilai, dan SKS dari transkrip asli ke template.",
+  },
+  {
+    number: "3",
+    title: "Upload & Match",
+    description:
+      "Unggah file kembali. AI kami akan mencocokkan dengan kurikulum kampus.",
+  },
+  {
+    number: "4",
+    title: "Daftar Kuliah",
+    description:
+      "Lihat hasil konversi, bandingkan biaya, dan daftar ke kampus pilihan.",
+  },
+];
 
+export default function HowItWorks() {
   return (
-    <section id="prosedur" className="py-20 bg-white border-b border-slate-100">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-900 mb-3">Cara Kerja Sistem</h2>
-          <p className="text-slate-500 text-base">Ikuti 4 langkah mudah untuk mendapatkan hasil konversi instan.</p>
+    <section id="prosedur" className="border-b border-slate-100 bg-white py-20">
+      <div className="mx-auto max-w-[95%] px-4 sm:px-6">
+        <div className="mb-16 text-center">
+          <h2 className="mb-3 text-3xl font-bold text-slate-900">
+            Cara Kerja Sistem
+          </h2>
+          <p className="text-base text-slate-500">
+            Ikuti 4 langkah mudah untuk mendapatkan hasil konversi instan.
+          </p>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
-          <div className="hidden lg:block absolute top-12 left-0 w-full h-0.5 bg-slate-100 -z-10"></div>
+
+        <div className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="absolute left-0 top-12 hidden h-0.5 w-full bg-slate-100 lg:block" />
           {steps.map((step) => (
-            <div key={step.id} className="bg-white p-6 text-center relative step-card hover:-translate-y-1 transition-transform duration-300">
-              <div className="w-16 h-16 rounded-2xl bg-white border-2 border-brand-100 text-brand-600 flex items-center justify-center text-2xl font-bold mb-6 mx-auto shadow-lg shadow-brand-100/50 z-10 relative">
-                {step.id}
+            <div
+              key={step.number}
+              className="group relative z-10 rounded-[1.75rem] bg-white p-6 text-center transition-all duration-300 hover:-translate-y-1.5"
+            >
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-brand-100 bg-white text-2xl font-bold text-brand-600 shadow-lg shadow-brand-100/50">
+                {step.number}
               </div>
-              <h4 className="font-bold text-slate-800 mb-2 text-lg">{step.title}</h4>
-              <p className="text-sm text-slate-500 leading-relaxed">{step.desc}</p>
+
+              <h3 className="mb-2 text-lg font-bold text-slate-800 transition-colors group-hover:text-brand-700">
+                {step.title}
+              </h3>
+              <p className="text-sm leading-relaxed text-slate-500">
+                {step.description}
+              </p>
             </div>
           ))}
         </div>
