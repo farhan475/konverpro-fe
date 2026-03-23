@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KonverPro Frontend
 
-## Getting Started
+Frontend KonverPro adalah aplikasi Next.js untuk tiga permukaan utama:
 
-First, run the development server:
+- landing page marketplace konversi SKS
+- portal admin perguruan tinggi
+- dashboard super admin
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Refactor ini menyelaraskan struktur halaman, shell, komponen shared, dan flow utama dengan referensi desain yang diberikan, sambil menjaga integrasi langsung ke backend aktif.
+
+## Stack
+
+- Next.js 16 App Router
+- React 19 + TypeScript
+- Tailwind CSS v4
+- shadcn/ui primitives
+- Axios untuk komunikasi API
+- Recharts untuk chart dashboard
+
+## Area Produk
+
+- `/` untuk landing marketplace, simulasi upload transkrip, hasil rekomendasi, dan claim
+- `/login` untuk portal akses `campus_admin`, `prodi_admin`, dan `super_admin`
+- `/campus-admin/*` untuk dashboard kampus, input konversi, hasil review, laporan, dan pengaturan
+- `/super-admin/*` untuk command center kampus, user, finance, audit, notifikasi, dan system control
+
+## Struktur Folder
+
+```text
+src/
+  app/                       App Router pages dan layouts
+  components/
+    auth/                    Portal login dan showcase panel
+    landing/                 Hero, simulation workspace, result board, dialogs
+    campus-admin/            Komponen domain admin kampus
+    super-admin/             Shell, shared page chrome, feature pages, modals
+    ui/                      Primitive reusable berbasis shadcn
+  lib/                       Axios client, PDF export, branding helpers
+docs/
+  frontend-architecture.md
+  frontend-pages.md
+  frontend-components.md
+  frontend-setup.md
+  integration-fe-be.md
+  refactor-summary.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Salin env yang diperlukan ke `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_CONVERSION_TEMPLATE_URL=http://localhost:8000/api/public/template
+NEXT_PUBLIC_ADMIN_WA_NUMBER=628123456789
+```
 
-## Learn More
+## Menjalankan Project
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Verifikasi produksi:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm run build
+```
 
-## Deploy on Vercel
+## Dokumentasi
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Arsitektur Frontend](docs/frontend-architecture.md)
+- [Daftar Halaman](docs/frontend-pages.md)
+- [Komponen Utama](docs/frontend-components.md)
+- [Setup Frontend](docs/frontend-setup.md)
+- [Integrasi FE-BE](docs/integration-fe-be.md)
+- [Ringkasan Refactor](docs/refactor-summary.md)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Catatan
+
+- Frontend berjalan dengan integrasi API nyata ke backend aktif.
+- Local fallback lama yang masih tersisa dipertahankan hanya sebagai safety net, bukan sebagai sumber data utama.
+- Route `/super-admin/backup` saat ini diperlakukan sebagai alias dari workspace backup dan restore sistem.
