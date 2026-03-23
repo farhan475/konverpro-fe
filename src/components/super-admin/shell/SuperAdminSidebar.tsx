@@ -2,32 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bell,
-  Buildings,
-  ChartBar,
-  GraduationCap,
-  Gear,
-  House,
-  Money,
-  ShieldCheck,
-  Users,
-  ClipboardText,
-  Database,
-} from "@phosphor-icons/react";
+import { ShieldCheck } from "@phosphor-icons/react";
 
-export const superAdminNavItems = [
-  { href: "/super-admin", label: "Overview", icon: House },
-  { href: "/super-admin/campuses", label: "Manajemen Kampus", icon: Buildings },
-  { href: "/super-admin/konversi", label: "Data Konversi", icon: GraduationCap },
-  { href: "/super-admin/finance", label: "Top Up & Saldo", icon: Money },
-  { href: "/super-admin/income", label: "Report Pemasukan", icon: ChartBar },
-  { href: "/super-admin/users", label: "Manajemen User", icon: Users },
-  { href: "/super-admin/settings", label: "Config Global", icon: Gear },
-  { href: "/super-admin/notification-templates", label: "Template Notifikasi", icon: Bell },
-  { href: "/super-admin/audit-logs", label: "Audit Logs", icon: ClipboardText },
-  { href: "/super-admin/system", label: "Backup & Restore", icon: Database },
-];
+import {
+  isSuperAdminNavItemActive,
+  superAdminNavSections,
+} from "../config/navigation";
 
 export default function SuperAdminSidebar() {
   const pathname = usePathname();
@@ -61,27 +41,35 @@ export default function SuperAdminSidebar() {
         </div>
       </div>
 
-      <nav className="space-y-2 px-4 py-6">
-        {superAdminNavItems.map((item) => {
-          const Icon = item.icon;
-          const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+      <nav className="space-y-5 px-4 py-6">
+        {superAdminNavSections.map((section) => (
+          <div key={section.label}>
+            <p className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-blue-200/45">
+              {section.label}
+            </p>
+            <div className="mt-3 space-y-2">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const active = isSuperAdminNavItemActive(pathname, item.href);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
-                active
-                  ? "bg-white text-[#031f37] shadow-lg shadow-black/10"
-                  : "text-white/65 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <Icon size={20} weight="bold" />
-              {item.label}
-            </Link>
-          );
-        })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
+                      active
+                        ? "bg-white text-[#031f37] shadow-lg shadow-black/10"
+                        : "text-white/65 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={20} weight="bold" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div className="mt-auto px-4 pb-6">

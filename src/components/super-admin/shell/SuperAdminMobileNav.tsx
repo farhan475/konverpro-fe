@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { superAdminNavItems } from "./SuperAdminSidebar";
+import {
+  isSuperAdminNavItemActive,
+  superAdminNavItems,
+} from "../config/navigation";
 
 export default function SuperAdminMobileNav() {
   const pathname = usePathname();
@@ -13,8 +16,7 @@ export default function SuperAdminMobileNav() {
       <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
         {superAdminNavItems.map((item) => {
           const Icon = item.icon;
-          const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = isSuperAdminNavItemActive(pathname, item.href);
 
           return (
             <Link
@@ -28,7 +30,7 @@ export default function SuperAdminMobileNav() {
             >
               <span className="flex items-center gap-2 whitespace-nowrap">
                 <Icon size={16} weight="bold" />
-                {item.label}
+                {item.shortLabel ?? item.label}
               </span>
             </Link>
           );

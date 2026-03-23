@@ -4,9 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowsClockwise,
   Bell,
-  ChatsCircle,
-  EnvelopeSimple,
-  Lightning,
   MagnifyingGlass,
   PencilSimple,
   Plus,
@@ -18,6 +15,7 @@ import {
   deleteNotificationTemplate,
   getNotificationTemplates,
 } from "../api";
+import ControlHero from "../shared/ControlHero";
 import ConfirmDialog from "../shared/ConfirmDialog";
 import EmptyState from "../shared/EmptyState";
 import LoadingState from "../shared/LoadingState";
@@ -139,112 +137,46 @@ export default function SuperAdminNotificationTemplatesPage() {
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-        <div className="rounded-[2.25rem] bg-[#001a33] p-7 text-white shadow-2xl shadow-brand-900/10">
-          <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
-                  Message Control
-                </span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-                  Backend Active
-                </span>
-              </div>
-          <h3 className="mt-4 text-3xl font-black tracking-tight">
-            Notification orchestration untuk top up, konversi, dan follow-up
-            operasional.
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/70">
-            Halaman ini saya rapikan supaya lebih terasa seperti message command
-            center. Operator sekarang lebih mudah membaca coverage trigger dan
-            kondisi data aktif.
-          </p>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4">
-              <div className="flex items-center gap-3">
-                <EnvelopeSimple size={20} className="text-blue-200" weight="bold" />
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                    Email Ready
-                  </p>
-                  <p className="text-lg font-black text-white">
-                    {templateSummary.emailTemplates}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4">
-              <div className="flex items-center gap-3">
-                <Bell size={20} className="text-amber-200" weight="bold" />
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                    Top Up Flow
-                  </p>
-                  <p className="text-lg font-black text-white">
-                    {templateSummary.topupTemplates}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4">
-              <div className="flex items-center gap-3">
-                <ChatsCircle size={20} className="text-emerald-200" weight="bold" />
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                    Conversion Flow
-                  </p>
-                  <p className="text-lg font-black text-white">
-                    {templateSummary.conversionTemplates}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4">
-          <div className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-              Coverage Saat Ini
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Total Template
-                </p>
-                <p className="mt-2 text-2xl font-black text-[#001a33]">
-                  {templateSummary.total}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Filter Aktif
-                </p>
-                <p className="mt-2 text-2xl font-black text-[#001a33]">
-                  {filteredTemplates.length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-blue-100 bg-blue-50 p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#094E8B] shadow-sm">
-                <Lightning size={20} weight="bold" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-[#001a33]">
-                  Saran penataan template
-                </p>
-                <p className="text-xs leading-relaxed text-blue-900/75">
-                  Pisahkan trigger top up, onboarding kampus, dan konversi agar
-                  operator lebih mudah audit copywriting per flow.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ControlHero
+        badge="Message Control"
+        title="Notification orchestration untuk top up, konversi, dan follow-up operasional."
+        description="Halaman ini sekarang mengikuti pola command center yang sama dengan panel lain, jadi coverage trigger, jumlah template aktif, dan kualitas orkestrasi pesan lebih cepat terbaca."
+        metrics={[
+          {
+            label: "Email Ready",
+            value: templateSummary.emailTemplates,
+            description: "Template dengan indikasi flow email aktif.",
+            tone: "default",
+          },
+          {
+            label: "Top Up Flow",
+            value: templateSummary.topupTemplates,
+            description: "Template yang menangani antrean top up dan billing.",
+            tone: "accent",
+          },
+          {
+            label: "Conversion Flow",
+            value: templateSummary.conversionTemplates,
+            description: "Template untuk flow konversi dan dokumen turunan.",
+            tone: "success",
+          },
+        ]}
+        aside={[
+          {
+            eyebrow: "Coverage Saat Ini",
+            title: `${templateSummary.total} template tersedia, ${filteredTemplates.length} tampil pada filter aktif.`,
+            description:
+              "Ringkasan ini memudahkan operator membaca ukuran library template sebelum masuk ke tabel manajemen.",
+          },
+          {
+            eyebrow: "Message Tip",
+            title: "Pisahkan trigger top up, onboarding kampus, dan konversi agar audit copywriting tetap rapi.",
+            description:
+              "Struktur trigger yang jelas membuat perubahan isi pesan lebih aman dan lebih mudah dilacak per flow operasional.",
+            tone: "blue",
+          },
+        ]}
+      />
 
       <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:max-w-md">

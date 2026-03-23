@@ -3,17 +3,15 @@
 import { useState } from "react";
 import {
   ArrowSquareIn,
-  ClockCountdown,
   DownloadSimple,
   FloppyDisk,
-  ShieldCheck,
   UploadSimple,
-  WarningCircle,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import axios from "@/lib/axios";
 import PageHeader from "../shared/PageHeader";
+import ControlHero from "../shared/ControlHero";
 import { getErrorMessage } from "../utils";
 
 const formatFileSize = (size: number) => {
@@ -91,88 +89,46 @@ export default function SuperAdminSystemPage() {
         description="Lakukan ekspor dan impor data sistem untuk kebutuhan pemulihan."
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-        <div className="rounded-[2.25rem] bg-[#001a33] p-7 text-white shadow-2xl shadow-brand-900/10">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/75">
-              System Recovery
-            </span>
-            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-              Manual safeguard
-            </span>
-          </div>
-          <h3 className="mt-4 text-3xl font-black tracking-tight">
-            Ruang kontrol backup dan restore untuk operasi platform.
-          </h3>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/70">
-            Halaman ini saya poles supaya terasa seperti panel pemulihan sistem.
-            Operator sekarang lebih mudah membaca status file aktif, jalur
-            ekspor, dan risiko restore sebelum mengeksekusi aksi besar.
-          </p>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                Backup Channel
-              </p>
-              <p className="mt-2 text-sm font-black text-blue-200">
-                Download JSON snapshot
-              </p>
-            </div>
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                Restore State
-              </p>
-              <p className="mt-2 text-sm font-black text-amber-200">
-                {file ? "File siap diproses" : "Menunggu file backup"}
-              </p>
-            </div>
-            <div className="rounded-[1.6rem] border border-white/10 bg-white/10 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/45">
-                File Terpilih
-              </p>
-              <p className="mt-2 text-sm font-black text-white">
-                {file ? formatFileSize(file.size) : "Belum ada"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4">
-          <div className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <ShieldCheck size={20} weight="bold" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-[#001a33]">
-                  Sistem siap ekspor
-                </p>
-                <p className="text-xs leading-relaxed text-slate-500">
-                  Snapshot dipakai untuk arsip, migrasi, dan fallback recovery.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-amber-200 bg-amber-50 p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-600 shadow-sm">
-                <WarningCircle size={20} weight="bold" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-[#001a33]">
-                  Restore wajib tervalidasi
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-amber-900/75">
-                  Gunakan file backup yang benar dan pastikan operator memahami
-                  dampak restore terhadap setting global yang sedang aktif.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ControlHero
+        badge="System Recovery"
+        title="Ruang kontrol backup dan restore untuk operasi platform."
+        description="Halaman ini sekarang memakai pola visual yang sama dengan panel super admin lain, sehingga status file aktif, jalur ekspor, dan risiko restore lebih mudah dibaca sebelum aksi besar dijalankan."
+        metrics={[
+          {
+            label: "Backup Channel",
+            value: "JSON Snapshot",
+            description: "Unduh arsip sistem sebagai file backup utama.",
+            tone: "default",
+          },
+          {
+            label: "Restore State",
+            value: file ? "File Siap" : "Menunggu File",
+            description: "Status file restore yang dipilih operator.",
+            tone: file ? "accent" : "default",
+          },
+          {
+            label: "File Terpilih",
+            value: file ? formatFileSize(file.size) : "Belum Ada",
+            description: "Ukuran file aktif untuk proses restore.",
+            tone: file ? "success" : "default",
+          },
+        ]}
+        aside={[
+          {
+            eyebrow: "Recovery Status",
+            title: "Snapshot dipakai untuk arsip, migrasi, dan fallback recovery.",
+            description:
+              "Gunakan backup berkala sebelum perubahan sistem besar atau import data penting.",
+          },
+          {
+            eyebrow: "Restore Warning",
+            title: "Restore wajib tervalidasi sebelum dieksekusi di environment aktif.",
+            description:
+              "Pastikan operator memahami dampak restore terhadap setting global dan data kontrol yang sedang berjalan.",
+            tone: "amber",
+          },
+        ]}
+      />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <div className="rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm">
@@ -233,21 +189,12 @@ export default function SuperAdminSystemPage() {
           </label>
 
           <div className="mt-6 rounded-[1.5rem] border border-slate-100 bg-slate-50 p-4">
-            <div className="flex items-start gap-3">
-              <ClockCountdown
-                size={20}
-                weight="bold"
-                className="mt-0.5 shrink-0 text-slate-400"
-              />
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  File Aktif
-                </p>
-                <p className="mt-2 text-sm font-black text-[#001a33]">
-                  {selectedFileLabel}
-                </p>
-              </div>
-            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+              File Aktif
+            </p>
+            <p className="mt-2 text-sm font-black text-[#001a33]">
+              {selectedFileLabel}
+            </p>
           </div>
 
           <button

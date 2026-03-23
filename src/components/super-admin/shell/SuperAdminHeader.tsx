@@ -2,10 +2,11 @@
 
 import { ShieldCheck, SignOut } from "@phosphor-icons/react";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { logoutRequest } from "../api";
+import { getSuperAdminNavContext } from "../config/navigation";
 import { getErrorMessage } from "../utils";
 
 interface SuperAdminHeaderProps {
@@ -15,7 +16,9 @@ interface SuperAdminHeaderProps {
 export default function SuperAdminHeader({
   userName = "Administrator",
 }: SuperAdminHeaderProps) {
+  const pathname = usePathname();
   const router = useRouter();
+  const { item, section } = getSuperAdminNavContext(pathname);
 
   const handleLogout = async () => {
     try {
@@ -37,20 +40,20 @@ export default function SuperAdminHeader({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-            Panel Kontrol
+            {section.label}
           </p>
           <h2 className="mt-1 text-base font-black text-[#001a33] md:text-lg">
-            Halo, {userName}
+            {item.label}
           </h2>
           <p className="mt-1 text-sm text-slate-400">
-            Pusat kendali kampus partner, transaksi, user, dan konfigurasi global.
+            {item.description}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 md:inline-flex">
             <ShieldCheck size={16} weight="fill" className="text-brand-700" />
-            Super Control Active
+            {userName}
           </div>
           <button
             type="button"
