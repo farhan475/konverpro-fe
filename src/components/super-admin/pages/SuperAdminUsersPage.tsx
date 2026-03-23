@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowsClockwise,
   Buildings,
   IdentificationBadge,
   MagnifyingGlass,
@@ -18,6 +19,7 @@ import {
   getSuperAdminUsersCollection,
 } from "../api";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import ControlHero from "../shared/ControlHero";
 import EmptyState from "../shared/EmptyState";
 import LoadingState from "../shared/LoadingState";
 import PageHeader from "../shared/PageHeader";
@@ -99,102 +101,68 @@ export default function SuperAdminUsersPage() {
         title="Manajemen Akses & Pengguna"
         description="Kelola kredensial dan hak akses seluruh administrator platform."
         action={
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedUser(null);
-              setFormOpen(true);
-            }}
-            className="inline-flex items-center gap-3 rounded-2xl bg-[#094E8B] px-8 py-4 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-blue-900/10 transition hover:bg-[#073e6f]"
-          >
-            <Plus weight="bold" />
-            Tambah Administrator
-          </button>
+          <div className="flex w-full flex-wrap gap-3 md:w-auto">
+            <button
+              type="button"
+              onClick={fetchData}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-xs font-black uppercase tracking-widest text-slate-500 transition hover:text-[#001a33]"
+            >
+              <ArrowsClockwise size={18} weight="bold" />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedUser(null);
+                setFormOpen(true);
+              }}
+              className="inline-flex h-12 items-center justify-center gap-3 rounded-2xl bg-[#094E8B] px-8 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-blue-900/10 transition hover:bg-[#073e6f]"
+            >
+              <Plus weight="bold" />
+              Tambah Administrator
+            </button>
+          </div>
         }
       />
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="relative overflow-hidden rounded-[2.75rem] bg-[#031f37] p-8 text-white shadow-[0_28px_80px_rgba(3,31,55,0.22)] lg:p-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(253,216,36,0.18),_transparent_24%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.14),_transparent_30%)]" />
-          <div className="relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
-              Access Control
-            </p>
-            <h3 className="mt-4 max-w-3xl text-3xl font-black tracking-tight text-white lg:text-4xl">
-              Atur siapa yang mengelola platform pusat, kampus, dan prodi dari
-              satu pusat akses.
-            </h3>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
-              Halaman ini saya arahkan menjadi panel otorisasi yang lebih jelas:
-              role pengguna, afiliasi institusi, dan tindakan edit/hapus langsung
-              terbaca dari atas.
-            </p>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  Super Admin
-                </p>
-                <p className="mt-3 text-4xl font-black text-white">
-                  {userSummary.superAdmins}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  Pengelola pusat dengan kontrol global.
-                </p>
-              </div>
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  Admin Kampus
-                </p>
-                <p className="mt-3 text-4xl font-black text-amber-300">
-                  {userSummary.campusAdmins}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  Operator institusi yang mengelola workflow kampus.
-                </p>
-              </div>
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  Admin Prodi
-                </p>
-                <p className="mt-3 text-4xl font-black text-white">
-                  {userSummary.prodiAdmins}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  Role akademik untuk level program studi.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-6 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-              User Coverage
-            </p>
-            <p className="mt-4 text-3xl font-black text-[#001a33]">
-              {users.length}
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Total akun administrator yang saat ini tercatat di seluruh ekosistem.
-            </p>
-          </div>
-
-          <div className="rounded-[2.5rem] border border-amber-100 bg-amber-50/70 p-6 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
-              Access Tip
-            </p>
-            <h4 className="mt-3 text-xl font-black tracking-tight text-[#001a33]">
-              Pastikan role dan afiliasi user tetap presisi agar jalur portal tidak membingungkan.
-            </h4>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              Struktur role yang rapi akan mempermudah login portal dan
-              pemisahan akses kampus vs pusat.
-            </p>
-          </div>
-        </div>
-      </section>
+      <ControlHero
+        badge="Access Control"
+        title="Atur siapa yang mengelola platform pusat, kampus, dan prodi dari satu pusat akses."
+        description="Halaman ini saya selaraskan ke pola control room yang sama, sehingga role pengguna, afiliasi institusi, dan tindakan edit atau hapus langsung terbaca dari bagian teratas."
+        metrics={[
+          {
+            label: "Super Admin",
+            value: userSummary.superAdmins,
+            description: "Pengelola pusat dengan kontrol global.",
+          },
+          {
+            label: "Admin Kampus",
+            value: userSummary.campusAdmins,
+            description: "Operator institusi yang mengelola workflow kampus.",
+            tone: "accent",
+          },
+          {
+            label: "Admin Prodi",
+            value: userSummary.prodiAdmins,
+            description: "Role akademik untuk level program studi.",
+          },
+        ]}
+        aside={[
+          {
+            eyebrow: "User Coverage",
+            title: `${users.length} akun administrator aktif tercatat di ekosistem saat ini.`,
+            description:
+              "Ringkasan ini membantu membaca skala akses sebelum operator masuk ke filter dan tabel pengguna.",
+          },
+          {
+            eyebrow: "Access Tip",
+            title: "Pastikan role dan afiliasi user tetap presisi agar jalur portal tidak membingungkan.",
+            description:
+              "Struktur role yang rapi mempermudah login portal dan pemisahan akses kampus versus pusat.",
+            tone: "amber",
+          },
+        ]}
+      />
 
       <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:max-w-md">

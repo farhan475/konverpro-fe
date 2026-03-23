@@ -9,10 +9,13 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
-import axios from "@/lib/axios";
+import { downloadSystemBackup, restoreSystemBackup } from "../api";
 import PageHeader from "../shared/PageHeader";
 import ControlHero from "../shared/ControlHero";
 import { getErrorMessage } from "../utils";
+
+const MAX_BACKUP_SIZE_BYTES = 10 * 1024 * 1024;
+const SUPPORTED_BACKUP_EXTENSIONS = [".json"];
 
 const formatFileSize = (size: number) => {
   if (size < 1024) {
@@ -35,18 +38,40 @@ export default function SuperAdminSystemPage() {
     ? `${file.name} (${formatFileSize(file.size)})`
     : "Belum ada file dipilih";
 
+  const validateBackupFile = (nextFile: File | null) => {
+    if (!nextFile) {
+      setFile(null);
+      return;
+    }
+
+    const normalizedName = nextFile.name.toLowerCase();
+    const hasSupportedExtension = SUPPORTED_BACKUP_EXTENSIONS.some((extension) =>
+      normalizedName.endsWith(extension),
+    );
+
+    if (!hasSupportedExtension) {
+      setFile(null);
+      toast.error("File backup harus berupa snapshot JSON dari sistem.");
+      return;
+    }
+
+    if (nextFile.size > MAX_BACKUP_SIZE_BYTES) {
+      setFile(null);
+      toast.error("Ukuran file backup maksimal 10 MB.");
+      return;
+    }
+
+    setFile(nextFile);
+  };
+
   const handleBackup = async () => {
     try {
       setBackupLoading(true);
-      const response = await axios.get("/super-admin/system/backup", {
-        responseType: "blob",
-      });
-
-      const blob = new Blob([response.data]);
+      const { blob, filename } = await downloadSystemBackup();
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `konverpro-backup-${Date.now()}.json`;
+      anchor.download = filename;
       anchor.click();
       window.URL.revokeObjectURL(url);
 
@@ -66,14 +91,13 @@ export default function SuperAdminSystemPage() {
 
     try {
       setRestoreLoading(true);
-      const formData = new FormData();
-      formData.append("backup_file", file);
+      const summary = await restoreSystemBackup(file);
+      const restoredLabel =
+        summary.restored_sections.length > 0
+          ? summary.restored_sections.join(", ")
+          : "tanpa section terdeteksi";
 
-      await axios.post("/super-admin/system/restore", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      toast.success("Restore sistem berhasil dijalankan.");
+      toast.success(`Restore parsial selesai: ${restoredLabel}.`);
       setFile(null);
     } catch (error) {
       toast.error(getErrorMessage(error, "Gagal melakukan restore sistem."));
@@ -176,15 +200,17 @@ export default function SuperAdminSystemPage() {
             <input
               type="file"
               className="hidden"
-              accept=".json,.zip,.sql"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              accept=".json,application/json,text/plain"
+              onChange={(event) =>
+                validateBackupFile(event.target.files?.[0] ?? null)
+              }
             />
             <FloppyDisk size={26} weight="bold" className="text-slate-400" />
             <p className="mt-3 text-sm font-bold text-slate-600">
               {file ? file.name : "Klik untuk pilih file backup"}
             </p>
             <p className="mt-1 text-[11px] uppercase tracking-widest text-slate-400">
-              Mendukung file backup sistem
+              Hanya JSON snapshot, maksimal 10 MB
             </p>
           </label>
 

@@ -1,6 +1,8 @@
 import axios from "@/lib/axios";
 import type {
   AdminUser,
+  AuditLogItem,
+  BackupRestoreSummary,
   ApiCollectionResult,
   ApiListResponse,
   ApiMutationResult,
@@ -8,6 +10,7 @@ import type {
   CampusFormValues,
   CampusStudyProgram,
   CampusWorkspaceForm,
+  CurrentUser,
   DashboardStats,
   GlobalSettingsForm,
   NotificationTemplateItem,
@@ -43,6 +46,52 @@ const initialGlobalSettings: GlobalSettingsForm = {
   support_email: "",
   support_whatsapp: "",
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readEnvelopeData<T>(payload: unknown): T | undefined {
+  if (isRecord(payload) && "data" in payload) {
+    return payload.data as T | undefined;
+  }
+
+  return payload as T | undefined;
+}
+
+function readCollectionData<T>(payload: unknown): T[] {
+  const data = readEnvelopeData<unknown>(payload);
+
+  return Array.isArray(data) ? (data as T[]) : [];
+}
+
+function readPaginatedCollectionData<T>(payload: unknown): T[] {
+  const data = readEnvelopeData<unknown>(payload);
+
+  if (Array.isArray(data)) {
+    return data as T[];
+  }
+
+  if (isRecord(data) && Array.isArray(data.data)) {
+    return data.data as T[];
+  }
+
+  return [];
+}
+
+function parseDownloadFilename(contentDispositionHeader?: string): string | null {
+  if (!contentDispositionHeader) {
+    return null;
+  }
+
+  const utfMatch = contentDispositionHeader.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    return decodeURIComponent(utfMatch[1]).replace(/["']/g, "");
+  }
+
+  const filenameMatch = contentDispositionHeader.match(/filename="?([^"]+)"?/i);
+  return filenameMatch?.[1] ? filenameMatch[1].trim() : null;
+}
 
 function canUseStorage() {
   return typeof window !== "undefined";
@@ -341,9 +390,10 @@ function normalizeOverviewReport(
   };
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<CurrentUser | null> {
   const response = await axios.get("/user");
-  return response.data;
+
+  return readEnvelopeData<CurrentUser>(response.data) ?? null;
 }
 
 export async function logoutRequest() {
@@ -399,7 +449,7 @@ export async function getSuperAdminUsersCollection(): Promise<
   ApiCollectionResult<AdminUser>
 > {
   const response = await axios.get<ApiListResponse<AdminUser>>("/super-admin/users");
-  const remoteUsers = (response.data.data ?? []).map((item) =>
+  const remoteUsers = readCollectionData<AdminUser>(response.data).map((item) =>
     normalizeUserRecord(item),
   );
   saveStoredUsers(remoteUsers);
@@ -413,7 +463,7 @@ export async function getSuperAdminCampusesCollection(): Promise<
   ApiCollectionResult<University>
 > {
   const response = await axios.get<ApiListResponse<University>>("/super-admin/campuses");
-  const remoteCampuses = (response.data.data ?? []).map((item) =>
+  const remoteCampuses = readCollectionData<University>(response.data).map((item) =>
     normalizeCampusRecord(item),
   );
   saveStoredCampuses(remoteCampuses);
@@ -537,7 +587,9 @@ export async function getSuperAdminTopupsCollection(): Promise<
 > {
   const response = await axios.get<ApiListResponse<TopupItem>>("/super-admin/topups");
   const remoteTopups = sortByCreatedAtDesc(
-    (response.data.data ?? []).map((item) => normalizeTopupItem(item)),
+    readCollectionData<TopupItem>(response.data).map((item) =>
+      normalizeTopupItem(item),
+    ),
   );
   saveStoredTopups(remoteTopups);
   return {
@@ -552,7 +604,7 @@ export async function getSuperAdminOverviewCollection(): Promise<
   const response = await axios.get("/super-admin/reports/overview");
   return {
     data: normalizeOverviewReport(
-      response.data?.data as Partial<SuperAdminOverviewReport>,
+      readEnvelopeData<Partial<SuperAdminOverviewReport>>(response.data),
     ),
     source: "remote",
   };
@@ -575,7 +627,7 @@ export async function getAdminDashboardStats(): Promise<DashboardStats> {
     })),
   ]);
 
-  const conversionsData = conversions.data?.data?.data ?? conversions.data?.data ?? [];
+  const conversionsData = readPaginatedCollectionData(conversions.data);
 
   return {
     totalCampuses: campusesData.length,
@@ -588,13 +640,19 @@ export async function getAdminDashboardStats(): Promise<DashboardStats> {
 
 export async function getRevenueReport(): Promise<RevenueReport> {
   const response = await axios.get("/super-admin/reports/revenue");
-  const chart = ((response.data?.chart ?? []) as RevenueReport["chart"]).map(
+  const payload = readEnvelopeData<Record<string, unknown>>(response.data) ?? {};
+  const chartSource = (Array.isArray(payload.chart)
+    ? payload.chart
+    : []) as RevenueReport["chart"];
+  const chart = chartSource.map(
     (item) => ({
       ...item,
       total: toSafeNumber(item.total),
     }),
   );
-  const summary = (response.data?.summary ?? {}) as Partial<RevenueSummary>;
+  const summary = (
+    isRecord(payload.summary) ? payload.summary : {}
+  ) as Partial<RevenueSummary>;
 
   return {
     chart,
@@ -610,7 +668,9 @@ export async function getRevenueReport(): Promise<RevenueReport> {
 export async function getSuperAdminSettings(): Promise<GlobalSettingsForm> {
   const localSettings = getStoredGlobalSettings();
   const response = await axios.get("/super-admin/settings");
-  const data = response.data?.data as Partial<Record<keyof GlobalSettingsForm, unknown>>;
+  const data = readEnvelopeData<
+    Partial<Record<keyof GlobalSettingsForm, unknown>>
+  >(response.data);
 
   const nextSettings: GlobalSettingsForm = {
     internal_rate: String(data?.internal_rate ?? localSettings.internal_rate),
@@ -659,12 +719,63 @@ export async function getNotificationTemplates() {
   const response = await axios.get<ApiListResponse<NotificationTemplateItem>>(
     "/super-admin/notification-templates",
   );
-  const items = response.data?.data ?? [];
+  const items = readCollectionData<NotificationTemplateItem>(response.data);
   saveStoredNotificationTemplates(items);
   return {
     data: items,
     source: "remote" as const,
   };
+}
+
+export async function getSuperAdminAuditLogsCollection(): Promise<
+  ApiCollectionResult<AuditLogItem>
+> {
+  const response = await axios.get("/super-admin/reports/audit-logs");
+  const items = readPaginatedCollectionData<AuditLogItem>(response.data);
+
+  return {
+    data: items,
+    source: "remote",
+  };
+}
+
+export async function downloadSystemBackup() {
+  const response = await axios.get("/super-admin/system/backup", {
+    responseType: "blob",
+  });
+
+  const blob =
+    response.data instanceof Blob
+      ? response.data
+      : new Blob([response.data], {
+          type: response.headers["content-type"] ?? "application/json",
+        });
+
+  return {
+    blob,
+    filename:
+      parseDownloadFilename(response.headers["content-disposition"]) ??
+      `konverpro-backup-${Date.now()}.json`,
+  };
+}
+
+export async function restoreSystemBackup(
+  file: File,
+): Promise<BackupRestoreSummary> {
+  const formData = new FormData();
+  formData.append("backup_file", file);
+
+  const response = await axios.post("/super-admin/system/restore", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return (
+    readEnvelopeData<BackupRestoreSummary>(response.data) ?? {
+      restored_sections: [],
+      global_settings_count: 0,
+      notification_templates_count: 0,
+    }
+  );
 }
 
 export async function createNotificationTemplate(

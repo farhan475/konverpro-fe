@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 
 import { getSuperAdminOverviewCollection } from "../api";
+import ControlHero from "../shared/ControlHero";
 import LoadingState from "../shared/LoadingState";
 import PageHeader from "../shared/PageHeader";
 import StatCard from "../shared/StatCard";
@@ -151,114 +152,48 @@ export default function SuperAdminOverviewPage() {
         <LoadingState label="Mengumpulkan ringkasan dashboard..." />
       ) : (
         <>
-          <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="relative overflow-hidden rounded-[2.75rem] bg-[#031f37] p-8 text-white shadow-[0_28px_80px_rgba(3,31,55,0.22)] lg:p-10">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(253,216,36,0.18),_transparent_24%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.14),_transparent_30%)]" />
-              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
-                  KonverPro Central
-                </p>
-                <h3 className="mt-4 max-w-3xl text-3xl font-black tracking-tight text-white lg:text-4xl">
-                  Command center untuk memantau jaringan kampus, transaksi, dan
-                  kualitas operasional platform.
-                </h3>
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
-                  Seluruh overview utama dirangkum dalam satu control room agar
-                  prioritas transaksi, kampus partner, dan performa operasional
-                  langsung terbaca dalam satu layar.
-                </p>
-
-                <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                      Active Campus Rate
-                    </p>
-                    <p className="mt-3 text-4xl font-black text-white">
-                      {activeCampusRate}%
-                    </p>
-                    <p className="mt-2 text-sm text-white/60">
-                      Kampus aktif dari seluruh institusi yang terdaftar.
-                    </p>
-                  </div>
-                  <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                      Conversion Approval
-                    </p>
-                    <p className="mt-3 text-4xl font-black text-white">
-                      {approvalRate}%
-                    </p>
-                    <p className="mt-2 text-sm text-white/60">
-                      Rasio konversi yang sudah lolos approval di platform.
-                    </p>
-                  </div>
-                  <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                      Revenue Pulse
-                    </p>
-                    <p className="mt-3 text-2xl font-black text-amber-300">
-                      {formatCurrency(overview.stats.totalRevenue)}
-                    </p>
-                    <p className="mt-2 text-sm text-white/60">
-                      Akumulasi pendapatan yang sudah terbaca di pusat kontrol.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-[2.5rem] border border-slate-100 bg-white p-6 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                  Prioritas Cepat
-                </p>
-                <div className="mt-5 space-y-4">
-                  <div className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
-                    <p className="text-sm font-black text-[#001a33]">
-                      Pending top up
-                    </p>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                      {overview.stats.pendingTopups} request sedang menunggu
-                      keputusan pusat.
-                    </p>
-                  </div>
-                  <div className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
-                    <p className="text-sm font-black text-[#001a33]">
-                      Kampus partner
-                    </p>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                      {overview.stats.partnerCampuses} institusi sudah masuk
-                      kategori official partner.
-                    </p>
-                  </div>
-                  <div className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
-                    <p className="text-sm font-black text-[#001a33]">
-                      Pengguna aktif
-                    </p>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                      {overview.stats.activeUsers} admin sedang menjadi basis
-                      operasional yang aktif saat ini.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[2.5rem] border border-amber-100 bg-amber-50/70 p-6 shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
-                  Central Insight
-                </p>
-                <h4 className="mt-3 text-xl font-black tracking-tight text-[#001a33]">
-                  {overview.stats.pendingTopups > 0
+          <ControlHero
+            badge="KonverPro Central"
+            title="Command center untuk memantau jaringan kampus, transaksi, dan kualitas operasional platform."
+            description="Seluruh overview utama dirangkum dalam satu control room agar prioritas transaksi, kampus partner, dan performa operasional langsung terbaca dalam satu layar."
+            metrics={[
+              {
+                label: "Active Campus Rate",
+                value: `${activeCampusRate}%`,
+                description: "Kampus aktif dari seluruh institusi yang terdaftar.",
+              },
+              {
+                label: "Conversion Approval",
+                value: `${approvalRate}%`,
+                description: "Rasio konversi yang sudah lolos approval di platform.",
+              },
+              {
+                label: "Revenue Pulse",
+                value: formatCurrency(overview.stats.totalRevenue),
+                description:
+                  "Akumulasi pendapatan yang sudah terbaca di pusat kontrol.",
+                tone: "accent",
+              },
+            ]}
+            aside={[
+              {
+                eyebrow: "Prioritas Cepat",
+                title: `${overview.stats.pendingTopups} top up pending, ${overview.stats.partnerCampuses} kampus partner, ${overview.stats.activeUsers} user aktif.`,
+                description:
+                  "Ringkasan cepat ini membantu operator membaca kondisi pusat tanpa harus turun ke tabel atau chart lebih dulu.",
+              },
+              {
+                eyebrow: "Central Insight",
+                title:
+                  overview.stats.pendingTopups > 0
                     ? "Ada antrean transaksi yang layak diprioritaskan hari ini."
-                    : "Pusat kontrol sedang dalam kondisi relatif stabil."}
-                </h4>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                  Menjaga approval transaksi, kesehatan kampus partner, dan
-                  distribusi user tetap rapi akan membuat dashboard pusat ini
-                  benar-benar terasa seperti control room operasional.
-                </p>
-              </div>
-            </div>
-          </section>
+                    : "Pusat kontrol sedang dalam kondisi relatif stabil.",
+                description:
+                  "Menjaga approval transaksi, kesehatan kampus partner, dan distribusi user tetap rapi akan membuat dashboard pusat ini benar-benar terasa seperti control room operasional.",
+                tone: "amber",
+              },
+            ]}
+          />
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <StatCard

@@ -50,6 +50,14 @@ export interface AdminUser {
   updated_at?: string;
 }
 
+export interface CurrentUser {
+  id?: string | number;
+  name?: string;
+  email?: string;
+  role?: string;
+  university_id?: string | number | null;
+}
+
 export interface DashboardStats {
   totalCampuses: number;
   totalUsers: number;
@@ -154,6 +162,12 @@ export interface RevenueSummary {
 export interface RevenueReport {
   chart: RevenueChartItem[];
   summary: RevenueSummary;
+}
+
+export interface BackupRestoreSummary {
+  restored_sections: string[];
+  global_settings_count: number;
+  notification_templates_count: number;
 }
 
 export interface SuperAdminOverviewStats {

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowsClockwise, MagnifyingGlass } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
-import axios from "@/lib/axios";
+import { getSuperAdminAuditLogsCollection } from "../api";
 import type { AuditLogItem } from "../types";
 import EmptyState from "../shared/EmptyState";
 import LoadingState from "../shared/LoadingState";
@@ -20,8 +20,8 @@ export default function SuperAdminAuditLogsPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/super-admin/reports/audit-logs");
-      setLogs(response.data?.data?.data ?? response.data?.data ?? []);
+      const response = await getSuperAdminAuditLogsCollection();
+      setLogs(response.data);
     } catch (error) {
       toast.error(getErrorMessage(error, "Gagal memuat audit logs."));
     } finally {

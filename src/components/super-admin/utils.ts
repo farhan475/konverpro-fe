@@ -65,8 +65,27 @@ export function getErrorMessage(error: unknown, fallback = "Terjadi kesalahan.")
     typeof (error as { response?: unknown }).response === "object"
   ) {
     const response = (error as {
-      response?: { data?: { message?: string } };
+      response?: { data?: { message?: string; errors?: Record<string, unknown> } };
     }).response;
+
+    const errors = response?.data?.errors;
+    if (errors && typeof errors === "object") {
+      for (const value of Object.values(errors)) {
+        if (typeof value === "string" && value) {
+          return value;
+        }
+
+        if (Array.isArray(value)) {
+          const firstMessage = value.find(
+            (item): item is string => typeof item === "string" && item.length > 0,
+          );
+
+          if (firstMessage) {
+            return firstMessage;
+          }
+        }
+      }
+    }
 
     if (response?.data?.message) return response.data.message;
   }

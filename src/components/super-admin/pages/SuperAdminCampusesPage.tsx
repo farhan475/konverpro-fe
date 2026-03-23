@@ -25,6 +25,7 @@ import CampusManagementModal from "../campuses/CampusManagementModal";
 import CampusFormModal from "../campuses/CampusFormModal";
 import AdjustBalanceModal from "../campuses/AdjustBalanceModal";
 import ConfirmDialog from "../shared/ConfirmDialog";
+import ControlHero from "../shared/ControlHero";
 import EmptyState from "../shared/EmptyState";
 import LoadingState from "../shared/LoadingState";
 import PageHeader from "../shared/PageHeader";
@@ -156,90 +157,45 @@ export default function SuperAdminCampusesPage() {
         }
       />
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="relative overflow-hidden rounded-[2.75rem] bg-[#031f37] p-8 text-white shadow-[0_28px_80px_rgba(3,31,55,0.22)] lg:p-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(253,216,36,0.18),_transparent_24%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.14),_transparent_30%)]" />
-          <div className="relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
-              Campus Network
-            </p>
-            <h3 className="mt-4 max-w-3xl text-3xl font-black tracking-tight text-white lg:text-4xl">
-              Pantau kesehatan mitra kampus, status partner, dan saldo institusi
-              dari satu panel kontrol.
-            </h3>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
-              Area ini saya jadikan lebih mirip meja kontrol kemitraan, jadi
-              status kampus, aksi saldo, dan proses manajemen institusi langsung
-              terbaca dari atas.
-            </p>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  Active Campuses
-                </p>
-                <p className="mt-3 text-4xl font-black text-white">
-                  {campusSummary.active}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  Institusi dengan status aktif di platform.
-                </p>
-              </div>
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  Official Partner
-                </p>
-                <p className="mt-3 text-4xl font-black text-amber-300">
-                  {campusSummary.partners}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  Kampus yang sudah masuk skema partner resmi.
-                </p>
-              </div>
-              <div className="rounded-[1.7rem] border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
-                  Pending Topups
-                </p>
-                <p className="mt-3 text-4xl font-black text-white">
-                  {campusSummary.pendingTopups}
-                </p>
-                <p className="mt-2 text-sm text-white/60">
-                  Request saldo yang masih menunggu keputusan.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-6 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-              Portfolio Saldo
-            </p>
-            <p className="mt-4 text-3xl font-black text-[#001a33]">
-              {formatCurrency(campusSummary.balance)}
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              Total saldo yang sedang tersebar di seluruh institusi yang tercatat
-              pada panel kemitraan.
-            </p>
-          </div>
-
-          <div className="rounded-[2.5rem] border border-amber-100 bg-amber-50/70 p-6 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
-              Mitra Insight
-            </p>
-            <h4 className="mt-3 text-xl font-black tracking-tight text-[#001a33]">
-              Gunakan tombol kelola dan adjust saldo untuk menjaga kampus tetap
-              sehat secara operasional.
-            </h4>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              Tabel di bawah tetap menjadi pusat aksi, tetapi ringkasan ini
-              membantu membaca kondisi jaringan kampus dengan lebih cepat.
-            </p>
-          </div>
-        </div>
-      </section>
+      <ControlHero
+        badge="Campus Network"
+        title="Pantau kesehatan mitra kampus, status partner, dan saldo institusi dari satu panel kontrol."
+        description="Area ini saya seragamkan ke pola control room yang sama dengan halaman super admin lain, jadi status kampus, aksi saldo, dan proses manajemen institusi langsung terbaca dari bagian atas."
+        metrics={[
+          {
+            label: "Active Campuses",
+            value: campusSummary.active,
+            description: "Institusi dengan status aktif di platform.",
+          },
+          {
+            label: "Official Partner",
+            value: campusSummary.partners,
+            description: "Kampus yang sudah masuk skema partner resmi.",
+            tone: "accent",
+          },
+          {
+            label: "Portfolio Balance",
+            value: formatCurrency(campusSummary.balance),
+            description: "Total saldo yang sedang tersebar di jaringan kampus.",
+            tone: "success",
+          },
+        ]}
+        aside={[
+          {
+            eyebrow: "Pending Queue",
+            title: `${campusSummary.pendingTopups} permintaan saldo masih menunggu keputusan pusat.`,
+            description:
+              "Antrean top up membantu membaca kampus mana yang butuh atensi sebelum operator turun ke tabel detail.",
+          },
+          {
+            eyebrow: "Mitra Insight",
+            title: "Gunakan tombol kelola dan adjust saldo untuk menjaga kampus tetap sehat secara operasional.",
+            description:
+              "Tabel di bawah tetap menjadi pusat aksi, tetapi ringkasan ini mempercepat pembacaan kondisi jaringan kampus secara keseluruhan.",
+            tone: "amber",
+          },
+        ]}
+      />
 
       <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:max-w-md">
