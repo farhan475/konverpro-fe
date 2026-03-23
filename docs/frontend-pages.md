@@ -73,7 +73,7 @@
 
 ### `/super-admin/campuses`
 
-- Ringkasan jaringan kampus
+- Ringkasan jaringan kampus dengan control hero seragam
 - Search dan manajemen institusi
 - Workspace form
 - Adjust balance
@@ -89,7 +89,7 @@
 
 ### `/super-admin/users`
 
-- Manajemen user dan role
+- Manajemen user dan role dengan context access control
 
 ### `/super-admin/settings`
 
@@ -109,6 +109,7 @@
 ### `/super-admin/system`
 
 - Backup dan restore sistem
+- Validasi file JSON snapshot sebelum upload
 
 ### `/super-admin/backup`
 

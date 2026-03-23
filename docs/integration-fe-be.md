@@ -107,9 +107,11 @@ Refactor backend menambahkan dua fondasi utama:
 Implikasi:
 
 - endpoint sukses umumnya mengembalikan `message` dan/atau `data`
+- `GET /api/user`, report revenue, audit logs, dan overview super admin kini dibaca frontend melalui envelope `data`
 - error validasi, auth, authorization, not found, dan server error kini konsisten dalam format JSON
 
 ## Known Boundaries
 
 - route backup mengembalikan file JSON stream untuk diunduh
 - import backup saat ini masih partial restore untuk entitas tertentu, bukan full destructive restore
+- restore backup hanya menerima snapshot JSON dan frontend memvalidasi batas ukuran 10 MB sebelum upload

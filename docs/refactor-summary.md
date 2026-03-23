@@ -27,6 +27,8 @@ Gap utama:
   - `Top Up & Saldo`
   - `Template Notifikasi`
   - `Backup & Restore`
+- menyamakan hero pattern kampus dan user management ke shell super admin yang sama
+- menambahkan validasi client-side untuk restore backup dan parsing error validasi yang lebih spesifik
 - mengganti README boilerplate dengan dokumentasi project aktual
 
 ## Perubahan Backend
@@ -36,6 +38,7 @@ Gap utama:
 - menormalisasi response di controller public, admin, campus, dan super admin yang paling dipakai FE
 - memperbarui endpoint backup agar mengirim file JSON stream yang lebih eksplisit
 - menambahkan metadata backup dan kompatibilitas import untuk format baru maupun lama
+- mengunci endpoint user, revenue report, dan restore backup agar kontraknya lebih konsisten untuk frontend
 
 ## Risiko yang Tetap Dicatat
 
